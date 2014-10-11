@@ -48,6 +48,11 @@ public class TrezorRelayServer {
 
   public static int DEFAULT_PORT_NUMBER = 3000;
 
+  /**
+   * The server socket timeout in milliseconds
+   */
+  private static final int SERVER_SOCKET_TIMEOUT = 10000;
+
   // The main thread the server runs on
   protected final ExecutorService serverExecutorService = SafeExecutors.newSingleThreadExecutor("relay-server");
 
@@ -117,8 +122,11 @@ public class TrezorRelayServer {
     try {
       ServerSocket serverSocket = new ServerSocket(portNumber);
 
+      // Shorten te socket timeout so that it fails faster
+      serverSocket.setSoTimeout(SERVER_SOCKET_TIMEOUT);
       log.debug("Waiting for TrezorRelayClient connection on port {}", portNumber);
       Socket clientSocket = serverSocket.accept();
+      log.debug("Accepted a client on socket {}", clientSocket);
 
       // Get the output and input streams to and from the RelayClient
       OutputStream outputToClient = new BufferedOutputStream(clientSocket.getOutputStream(), 1024);
