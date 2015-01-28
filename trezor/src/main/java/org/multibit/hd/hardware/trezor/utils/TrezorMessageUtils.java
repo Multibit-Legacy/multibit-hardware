@@ -1,13 +1,26 @@
 package org.multibit.hd.hardware.trezor.utils;
 
 import com.google.common.base.Optional;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.Message;
 import com.satoshilabs.trezor.protobuf.TrezorMessage;
+import com.satoshilabs.trezor.protobuf.TrezorType;
 import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.wallet.KeyChain;
 import org.multibit.hd.hardware.core.events.MessageEvent;
 import org.multibit.hd.hardware.core.events.MessageEventType;
 import org.multibit.hd.hardware.core.messages.HardwareWalletMessage;
+import org.multibit.hd.hardware.core.messages.TxRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,6 +29,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * <p>Utility class to provide the following to applications:</p>
@@ -260,10 +275,13 @@ public final class TrezorMessageUtils {
       }
 
       // Must be OK to be here
-      log.debug("< Message: {}", ToStringBuilder.reflectionToString(message, new TrezorMessageToStringStyle()));
 
       if (hardwareWalletMessage == null) {
         log.warn("Could not adapt message to Core.");
+        log.trace("< Message:\n{}", ToStringBuilder.reflectionToString(message, new TrezorMessageToStringStyle()));
+
+      } else {
+        log.trace("< HardwareMessage:\n{}", ToStringBuilder.reflectionToString(hardwareWalletMessage, new TrezorMessageToStringStyle()));
       }
 
       // Wrap the type and message into an event
@@ -286,12 +304,14 @@ public final class TrezorMessageUtils {
   public static void logPacket(String prefix, int count, byte[] buffer) {
 
     // Only do work if required
-    if (log.isDebugEnabled()) {
+    // There is a security issue to revealing this information for certain packets
+    // so be cautious in raising it in Production
+    if (log.isTraceEnabled()) {
       String s = prefix + " Packet [" + count + "]:";
       for (byte b : buffer) {
         s += String.format(" %02x", b);
       }
-      log.debug("{}", s);
+      log.trace("{}", s);
     }
 
   }
@@ -322,12 +342,12 @@ public final class TrezorMessageUtils {
       messageBuffer.get(buffer, 1, 63); // Payload
 
       // Describe the packet
-      String s = "Packet [" + i + "]: ";
+      String s = "> Packet [" + i + "]: ";
       for (int j = 0; j < 64; j++) {
         s += String.format(" %02x", buffer[j]);
       }
 
-      log.info("> {}", s);
+      log.info(s);
 
       out.write(buffer);
 
@@ -351,7 +371,8 @@ public final class TrezorMessageUtils {
     String msgName = message.getClass().getSimpleName();
     int msgId = TrezorMessage.MessageType.valueOf("MessageType_" + msgName).getNumber();
 
-    log.debug("> Message: {}, ({} bytes)", ToStringBuilder.reflectionToString(message, new TrezorMessageToStringStyle()), msgSize);
+    // There is a security risk to raising this logging level beyond trace
+    log.trace("> Message: {}, ({} bytes)", ToStringBuilder.reflectionToString(message, new TrezorMessageToStringStyle()), msgSize);
 
     // Create the header
     ByteBuffer messageBuffer = ByteBuffer.allocate(32768);
@@ -406,7 +427,8 @@ public final class TrezorMessageUtils {
         throw new IOException("Read buffer is closed");
       }
 
-      log.debug("< {} bytes", received);
+      // There is a security risk to raising this logging level beyond trace
+      log.trace("< {} bytes", received);
       TrezorMessageUtils.logPacket("<", 0, buffer);
 
       if (received < 9) {
@@ -429,7 +451,8 @@ public final class TrezorMessageUtils {
       break;
     }
 
-    log.debug("< Type: '{}' Message size: '{}' bytes", type.name(), msgSize);
+    // There is a security risk to raising this logging level beyond trace
+    log.trace("< Type: '{}' Message size: '{}' bytes", type.name(), msgSize);
 
     int packet = 0;
     while (messageBuffer.position() < msgSize) {
@@ -438,7 +461,8 @@ public final class TrezorMessageUtils {
       received = in.read(buffer);
       packet++;
 
-      log.debug("< (cont) {} bytes", received);
+      // There is a security risk to raising this logging level beyond trace
+      log.trace("< (cont) {} bytes", received);
       TrezorMessageUtils.logPacket("<", packet, buffer);
 
       if (buffer[0] != (byte) '?') {
@@ -456,5 +480,233 @@ public final class TrezorMessageUtils {
     return TrezorMessageUtils.parse(type, Arrays.copyOfRange(messageBuffer.array(), 0, msgSize));
 
   }
+
+  /**
+   * @param requestedTx The requested tx
+   *
+   * @return A Trezor transaction type containing an overall description of the current transaction
+   */
+  public static TrezorType.TransactionType buildTxMetaResponse(Optional<Transaction> requestedTx) {
+
+    int inputCount = requestedTx.get().getInputs().size();
+    // TxOutputBinType and TxOutputType counts are the same so ignore hash flag
+    int outputCount = requestedTx.get().getOutputs().size();
+
+    // Provide details about the requested transaction
+    return TrezorType.TransactionType
+      .newBuilder()
+      .setVersion((int) requestedTx.get().getVersion())
+      .setLockTime((int) requestedTx.get().getLockTime())
+      .setInputsCnt(inputCount)
+      .setOutputsCnt(outputCount)
+      .build();
+
+  }
+
+  /**
+   * @param txRequest               The Trezor request
+   * @param requestedTx             The requested tx (either current or a previous one providing inputs)
+   * @param binOutputType           True if the requested tx is a parent (the receiving address map does not apply)
+   * @param receivingAddressPathMap A map of paths for rapid address lookup (called AddressN in Trezor protobuf)
+   *
+   * @return A Trezor transaction type containing a description of an input
+   */
+  public static TrezorType.TransactionType buildTxInputResponse(
+    TxRequest txRequest,
+    Optional<Transaction> requestedTx,
+    boolean binOutputType,
+    Map<Integer, ImmutableList<ChildNumber>> receivingAddressPathMap
+  ) {
+
+    final Optional<Integer> requestIndex = txRequest.getTxRequestDetailsType().getRequestIndex();
+    if (!requestIndex.isPresent()) {
+      log.warn("Request index is not present for TxInput");
+      return null;
+    }
+
+    // Get the transaction input indicated by the request index
+    TransactionInput input = requestedTx.get().getInput(requestIndex.get());
+
+    List<Integer> addressN = Lists.newArrayList();
+    if (!binOutputType) {
+      // We are the current transaction so look up the path of the receiving address
+      ImmutableList<ChildNumber> receivingAddressPath = receivingAddressPathMap.get(requestIndex.get());
+      Preconditions.checkNotNull(receivingAddressPath, "The receiving address path has no entry for index " + requestIndex.get() + ". Signing will fail.");
+      addressN = TrezorMessageUtils.buildAddressN(receivingAddressPath);
+    }
+
+    // Must be OK to be here
+
+    // Build a TxInputType message
+    int prevIndex = (int) input.getOutpoint().getIndex();
+    byte[] prevHash = input.getOutpoint().getHash().getBytes();
+
+    // No multisig support in MBHD yet
+    TrezorType.InputScriptType inputScriptType = TrezorType.InputScriptType.SPENDADDRESS;
+
+    TrezorType.TxInputType txInputType = TrezorType.TxInputType
+      .newBuilder()
+      .addAllAddressN(addressN)
+      .setSequence((int) input.getSequenceNumber())
+      .setScriptSig(ByteString.copyFrom(input.getScriptSig().getProgram()))
+      .setScriptType(inputScriptType)
+      .setPrevIndex(prevIndex)
+      .setPrevHash(ByteString.copyFrom(prevHash))
+      .build();
+
+    return TrezorType.TransactionType
+      .newBuilder()
+      .addInputs(txInputType)
+      .build();
+
+  }
+
+  /**
+   * @param txRequest            The Trezor request
+   * @param requestedTx          The requested tx (either current or a previous one providing inputs)
+   * @param changeAddressPathMap A map of paths for rapid address lookup (called AddressN in Trezor protobuf)
+   *
+   * @return A Trezor transaction type containing a description of an output
+   */
+  public static TrezorType.TransactionType buildTxOutputResponse(
+    TxRequest txRequest,
+    Optional<Transaction> requestedTx,
+    boolean binOutputType,
+    Map<Address, ImmutableList<ChildNumber>> changeAddressPathMap) {
+
+    Preconditions.checkNotNull(changeAddressPathMap, "'changeAddressPathMap' must be present");
+
+    final Optional<Integer> requestIndex = txRequest.getTxRequestDetailsType().getRequestIndex();
+    if (!requestIndex.isPresent()) {
+      log.warn("Request index is not present for TxOutput");
+      return null;
+    }
+
+    // Get the transaction output indicated by the request index
+    TransactionOutput output = requestedTx.get().getOutput(requestIndex.get());
+
+    if (binOutputType) {
+
+      // Build a TxOutputBinType representing a previous transaction
+
+      // Require the output script program
+      byte[] scriptPubKey = output.getScriptPubKey().getProgram();
+
+      TrezorType.TxOutputBinType txOutputBinType = TrezorType.TxOutputBinType
+        .newBuilder()
+        .setAmount(output.getValue().value)
+        .setScriptPubkey(ByteString.copyFrom(scriptPubKey))
+        .build();
+
+      return TrezorType.TransactionType
+        .newBuilder()
+        .addBinOutputs(txOutputBinType)
+        .build();
+
+    }
+
+    // Build a TxOutputType representing the current transaction
+
+    // Address
+    Address address = output.getAddressFromP2PKHScript(MainNetParams.get());
+    if (address == null) {
+      throw new IllegalArgumentException("TxOutput " + requestIndex + " has no address.");
+    }
+
+    // Is it pay-to-script-hash (P2SH) or pay-to-address (P2PKH)?
+    final TrezorType.OutputScriptType outputScriptType;
+    if (address.isP2SHAddress()) {
+      outputScriptType = TrezorType.OutputScriptType.PAYTOSCRIPTHASH;
+    } else {
+      outputScriptType = TrezorType.OutputScriptType.PAYTOADDRESS;
+    }
+
+    final TrezorType.TxOutputType txOutputType;
+
+    // Check for change addresses
+
+    if (changeAddressPathMap.containsKey(address)) {
+
+      Iterable<? extends Integer> addressN = buildAddressN(changeAddressPathMap.get(address));
+
+      // Known change address so it won't trigger a sign confirmation
+      txOutputType = TrezorType.TxOutputType
+        .newBuilder()
+        .addAllAddressN(addressN)
+        .setAmount(output.getValue().value)
+        .setScriptType(outputScriptType)
+        .build();
+
+    } else {
+
+      // Unknown address so can expect a sign confirmation
+      txOutputType = TrezorType.TxOutputType
+        .newBuilder()
+        .setAddress(String.valueOf(address))
+        .setAmount(output.getValue().value)
+        .setScriptType(outputScriptType)
+        .build();
+
+    }
+
+    return TrezorType.TransactionType
+      .newBuilder()
+      .addOutputs(txOutputType)
+      .build();
+
+  }
+
+
+  /**
+   * <p>Build an AddressN chain code structure</p>
+   *
+   * @param account    The plain account number (0 gives maximum compatibility)
+   * @param keyPurpose The key purpose (RECEIVE_FUNDS,CHANGE,REFUND,AUTHENTICATION etc)
+   * @param index      The plain index of the required address
+   *
+   * @return The list representing the chain code (only a simple chain is currently supported)
+   */
+  public static List<Integer> buildAddressN(int account, KeyChain.KeyPurpose keyPurpose, int index) {
+    int keyPurposeAddressN = 0;
+    switch (keyPurpose) {
+      case RECEIVE_FUNDS:
+      case REFUND:
+        keyPurposeAddressN = 0;
+        break;
+      case CHANGE:
+      case AUTHENTICATION:
+        keyPurposeAddressN = 1;
+        break;
+    }
+
+    return Lists.newArrayList(
+      44 | ChildNumber.HARDENED_BIT,
+      ChildNumber.HARDENED_BIT,
+      account | ChildNumber.HARDENED_BIT,
+      keyPurposeAddressN,
+      index
+    );
+  }
+
+  /**
+   * <p>Build an AddressN chain code structure</p>
+   *
+   * @param receivingAddressPath The Bitcoinj receiving address path
+   *
+   * @return The list representing the chain code (only a simple chain is currently supported)
+   */
+  public static List<Integer> buildAddressN(ImmutableList<ChildNumber> receivingAddressPath) {
+
+    List<Integer> addressN = Lists.newArrayList();
+
+    for (ChildNumber childNumber : receivingAddressPath) {
+
+      addressN.add(childNumber.getI());
+
+    }
+
+    return addressN;
+  }
+
 
 }

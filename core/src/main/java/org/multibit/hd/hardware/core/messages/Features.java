@@ -3,6 +3,7 @@ package org.multibit.hd.hardware.core.messages;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+import org.multibit.hd.hardware.core.utils.HexUtils;
 
 import java.util.List;
 
@@ -45,7 +46,7 @@ public class Features implements HardwareWalletMessage {
   }
 
   /**
-   * @return The version of the device (e.g. "1.2.3.4")
+   * @return The version of the device (e.g. "1.2.3")
    */
   public String getVersion() {
     return version;
@@ -67,6 +68,9 @@ public class Features implements HardwareWalletMessage {
   }
 
   /**
+   * <p>The device ID is regenerated randomly each time <code>initialise()</code> is called.</p>
+   * <p>It is therefore not useful as a "power cycle" or "wipe" detector.</p>
+   *
    * @return The device unique identifier
    */
   public String getDeviceId() {
@@ -189,8 +193,8 @@ public class Features implements HardwareWalletMessage {
       .append("label", label)
       .append("coins", coins)
       .append("initialized", initialized)
-      .append("revision", revision)
-      .append("bootloaderHash", bootloaderHash)
+      .append("revision", HexUtils.toHexBytes(revision))
+      .append("bootloaderHash", HexUtils.toHexBytes(bootloaderHash))
       .append("imported", imported)
       .toString();
   }

@@ -1,23 +1,26 @@
 package org.multibit.hd.hardware.trezor.clients;
 
-import com.google.bitcoin.core.*;
-import com.google.bitcoin.crypto.ChildNumber;
-import com.google.bitcoin.params.MainNetParams;
-import com.google.bitcoin.wallet.KeyChain;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.Message;
 import com.satoshilabs.trezor.protobuf.TrezorMessage;
 import com.satoshilabs.trezor.protobuf.TrezorType;
+import org.bitcoinj.core.*;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.wallet.KeyChain;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.events.MessageEvent;
 import org.multibit.hd.hardware.core.messages.TxRequest;
 import org.multibit.hd.hardware.core.utils.TransactionUtils;
+import org.multibit.hd.hardware.trezor.utils.TrezorMessageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -99,6 +102,7 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
     );
   }
 
+  // TODO Support use of seed node
   @Override
   public Optional<MessageEvent> loadDevice(
     String language,
@@ -309,12 +313,13 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
   }
 
   @Override
-  public Optional<MessageEvent> txAck(TxRequest txRequest, Transaction tx) {
+  public Optional<MessageEvent> txAck(
+    TxRequest txRequest,
+    Transaction tx,
+    Map<Integer, ImmutableList<ChildNumber>> receivingAddressPathMap,
+    Map<Address, ImmutableList<ChildNumber>> changeAddressPathMap) {
 
     TrezorType.TransactionType txType = null;
-
-    // Get the request index (if present)
-    Optional<Integer> requestIndex = txRequest.getTxRequestDetailsType().getRequestIndex();
 
     // Get the transaction hash (if present)
     Optional<byte[]> txHash = txRequest.getTxRequestDetailsType().getTxHash();
@@ -323,7 +328,8 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
     Optional<Transaction> requestedTx = Optional.of(tx);
 
     // Check if the requested transaction is different to the current
-    if (txHash.isPresent()) {
+    boolean binOutputType = txHash.isPresent();
+    if (binOutputType) {
       // Need to look up a transaction by hash
       requestedTx = TransactionUtils.getTransactionByHash(tx, txHash.get());
 
@@ -337,122 +343,18 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
 
     // Have the required transaction at this point
 
-    // TODO Extract method into utility class TrezorMessageUtils
     switch (txRequest.getTxRequestType()) {
       case TX_META:
-
-        int inputCount = requestedTx.get().getInputs().size();
-        // TxOutputBinType and TxOutputType counts are the same so ignore hash flag
-        int outputCount = requestedTx.get().getOutputs().size();
-
-        // Provide details about the requested transaction
-        txType = TrezorType.TransactionType
-          .newBuilder()
-          .setVersion((int) requestedTx.get().getVersion())
-          .setLockTime((int) requestedTx.get().getLockTime())
-          .setInputsCnt(inputCount)
-          .setOutputsCnt(outputCount)
-          .build();
-
+        txType = TrezorMessageUtils.buildTxMetaResponse(requestedTx);
         break;
       case TX_INPUT:
-
-        if (!requestIndex.isPresent()) {
-          log.warn("Request index is not present for TxInput");
-          break;
-        }
-
-        // Get the transaction input indicated by the request index
-        requestIndex = txRequest.getTxRequestDetailsType().getRequestIndex();
-        TransactionInput input = requestedTx.get().getInput(requestIndex.get());
-
-        // Must be OK to be here
-
-        // Build a TxInputType message
-        int prevIndex = (int) input.getOutpoint().getIndex();
-        byte[] prevHash = input.getOutpoint().getHash().getBytes();
-
-        // No multisig support in MBHD yet
-        TrezorType.InputScriptType inputScriptType = TrezorType.InputScriptType.SPENDADDRESS;
-
-        TrezorType.TxInputType txInputType = TrezorType.TxInputType
-          .newBuilder()
-          .setSequence((int) input.getSequenceNumber())
-          .setScriptSig(ByteString.copyFrom(input.getScriptSig().getProgram()))
-          .setScriptType(inputScriptType)
-          .setPrevIndex(prevIndex)
-          .setPrevHash(ByteString.copyFrom(prevHash))
-          .build();
-
-        txType = TrezorType.TransactionType
-          .newBuilder()
-          .addInputs(txInputType)
-          .build();
-
+        txType = TrezorMessageUtils.buildTxInputResponse(txRequest, requestedTx, binOutputType, receivingAddressPathMap);
         break;
       case TX_OUTPUT:
-
-        if (!requestIndex.isPresent()) {
-          log.warn("Request index is not present for TxOutput");
-          break;
-        }
-
-        // Get the transaction output indicated by the request index
-        requestIndex = txRequest.getTxRequestDetailsType().getRequestIndex();
-        TransactionOutput output = requestedTx.get().getOutput(requestIndex.get());
-
-        if (txHash.isPresent()) {
-
-          // Build a TxOutputBinType representing a previous transaction
-
-          // Require the output script program
-          byte[] scriptPubKey = output.getScriptPubKey().getProgram();
-
-          TrezorType.TxOutputBinType txOutputBinType = TrezorType.TxOutputBinType
-            .newBuilder()
-            .setAmount(output.getValue().value)
-            .setScriptPubkey(ByteString.copyFrom(scriptPubKey))
-            .build();
-
-          txType = TrezorType.TransactionType
-            .newBuilder()
-            .addBinOutputs(txOutputBinType)
-            .build();
-
-        } else {
-
-          // Build a TxOutputType representing the current transaction
-
-          // Address
-          Address address = output.getAddressFromP2PKHScript(MainNetParams.get());
-          if (address == null) {
-            throw new IllegalArgumentException("TxOutput " + requestIndex + " has no address.");
-          }
-
-          // Is it pay-to-script-hash (P2SH) or pay-to-address (P2PKH)?
-          final TrezorType.OutputScriptType outputScriptType;
-          if (address.isP2SHAddress()) {
-            outputScriptType = TrezorType.OutputScriptType.PAYTOSCRIPTHASH;
-          } else {
-            outputScriptType = TrezorType.OutputScriptType.PAYTOADDRESS;
-          }
-
-          TrezorType.TxOutputType txOutputType = TrezorType.TxOutputType
-            .newBuilder()
-            .setAddress(String.valueOf(address))
-            .setAmount(output.getValue().value)
-            .setScriptType(outputScriptType)
-            .build();
-
-          txType = TrezorType.TransactionType
-            .newBuilder()
-            .addOutputs(txOutputType)
-            .build();
-        }
+        txType = TrezorMessageUtils.buildTxOutputResponse(txRequest, requestedTx, binOutputType, changeAddressPathMap);
         break;
       case TX_FINISHED:
         log.info("TxSign workflow complete.");
-
         break;
       default:
         log.error("Unknown TxReturnType: {}", txRequest.getTxRequestType().name());
@@ -482,7 +384,9 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
       TrezorMessage.PinMatrixAck
         .newBuilder()
         .setPin(pin)
-        .build()
+        .build(),
+      // No immediate response expected
+      2, TimeUnit.SECONDS
     );
   }
 
@@ -492,8 +396,8 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
       TrezorMessage.ButtonAck
         .newBuilder()
         .build(),
-      // Allow user time to decide
-      10, TimeUnit.MINUTES
+      // No immediate response expected
+      2, TimeUnit.SECONDS
     );
   }
 
@@ -501,8 +405,9 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
     return sendMessage(
       TrezorMessage.Cancel
         .newBuilder()
-        .build()
-    );
+        .build(),
+      // No immediate response expected
+      2, TimeUnit.SECONDS);
   }
 
   @Override
@@ -517,7 +422,7 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
       TrezorMessage.GetAddress
         .newBuilder()
           // Build the chain code
-        .addAllAddressN(buildAddressN(account, keyPurpose, index))
+        .addAllAddressN(TrezorMessageUtils.buildAddressN(account, keyPurpose, index))
         .setCoinName("Bitcoin")
         .setShowDisplay(showDisplay)
         .build()
@@ -535,7 +440,24 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
       TrezorMessage.GetPublicKey
         .newBuilder()
           // Build the chain code
-        .addAllAddressN(buildAddressN(account, keyPurpose, index))
+        .addAllAddressN(TrezorMessageUtils.buildAddressN(account, keyPurpose, index))
+        .build()
+    );
+
+  }
+
+  @Override
+  public Optional<MessageEvent> getDeterministicHierarchy(List<ChildNumber> childNumbers) {
+
+    List<Integer> addressN = Lists.newArrayList();
+    for (ChildNumber childNumber : childNumbers) {
+      addressN.add(childNumber.getI());
+    }
+
+    return sendMessage(
+      TrezorMessage.GetPublicKey
+        .newBuilder()
+        .addAllAddressN(addressN)
         .build()
     );
 
@@ -574,7 +496,7 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
       TrezorMessage.SignMessage
         .newBuilder()
           // Build the chain code
-        .addAllAddressN(buildAddressN(account, keyPurpose, index))
+        .addAllAddressN(TrezorMessageUtils.buildAddressN(account, keyPurpose, index))
         .setCoinName("Bitcoin")
         .setMessage(ByteString.copyFrom(message))
         .build()
@@ -624,7 +546,7 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
       TrezorMessage.DecryptMessage
         .newBuilder()
           // Build the chain code
-        .addAllAddressN(buildAddressN(account, keyPurpose, index))
+        .addAllAddressN(TrezorMessageUtils.buildAddressN(account, keyPurpose, index))
         .setMessage(ByteString.copyFrom(message))
         .build()
     );
@@ -645,7 +567,7 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
       TrezorMessage.CipherKeyValue
         .newBuilder()
           // Build the chain code
-        .addAllAddressN(buildAddressN(account, keyPurpose, index))
+        .addAllAddressN(TrezorMessageUtils.buildAddressN(account, keyPurpose, index))
         .setAskOnDecrypt(askOnDecrypt)
         .setAskOnEncrypt(askOnEncrypt)
         .setEncrypt(isEncrypting)
@@ -672,38 +594,7 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
   }
 
   /**
-   * <p>Build an AddressN chain code structure</p>
-   *
-   * @param account    The plain account number (0 gives maximum compatibility)
-   * @param keyPurpose The key purpose (RECEIVE_FUNDS,CHANGE,REFUND,AUTHENTICATION etc)
-   * @param index      The plain index of the required address
-   *
-   * @return The list representing the chain code (only a simple chain is currently supported)
-   */
-  protected List<Integer> buildAddressN(int account, KeyChain.KeyPurpose keyPurpose, int index) {
-    int keyPurposeAddressN = 0;
-    switch (keyPurpose) {
-      case RECEIVE_FUNDS:
-      case REFUND:
-        keyPurposeAddressN = 0;
-        break;
-      case CHANGE:
-      case AUTHENTICATION:
-        keyPurposeAddressN = 1;
-        break;
-    }
-
-    return Lists.newArrayList(
-      44 | ChildNumber.HARDENED_BIT,
-      ChildNumber.HARDENED_BIT,
-      account | ChildNumber.HARDENED_BIT,
-      keyPurposeAddressN,
-      index
-    );
-  }
-
-  /**
-   * <p>Send a message to the device that should have a near-immediate (under 1 second) response.</p>
+   * <p>Send a message to the device that should have a near-immediate (under 5 second) response.</p>
    * <p>If the response times out a FAILURE message should be generated.</p>
    *
    * @param message The message to send to the hardware wallet
@@ -716,7 +607,11 @@ public abstract class AbstractTrezorHardwareWalletClient implements HardwareWall
    * <p>Send a message to the device with an arbitrary response duration.</p>
    * <p>If the response times out a FAILURE message should be generated.</p>
    *
-   * @param message@return An optional low level message event, present only in blocking implementations
+   * @param message  The message to send to the hardware wallet
+   * @param duration The duration to wait before returning
+   * @param timeUnit The time unit
+   *
+   * @return An optional low level message event, present only in blocking implementations
    */
   protected abstract Optional<MessageEvent> sendMessage(Message message, int duration, TimeUnit timeUnit);
 

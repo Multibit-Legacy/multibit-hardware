@@ -1,21 +1,22 @@
 package org.multibit.hd.hardware.examples.trezor.usb;
 
-import com.google.bitcoin.core.Address;
-import com.google.bitcoin.core.ECKey;
-import com.google.bitcoin.core.Utils;
-import com.google.bitcoin.params.MainNetParams;
-import com.google.bitcoin.wallet.KeyChain;
 import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.Uninterruptibles;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.ECKey;
+import org.bitcoinj.core.Utils;
+import org.bitcoinj.params.MainNetParams;
+import org.bitcoinj.wallet.KeyChain;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.HardwareWalletService;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvent;
+import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.messages.MessageSignature;
 import org.multibit.hd.hardware.core.messages.PinMatrixRequest;
 import org.multibit.hd.hardware.core.wallets.HardwareWallets;
 import org.multibit.hd.hardware.trezor.clients.TrezorHardwareWalletClient;
-import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1UsbHardwareWallet;
+import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1HidHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.spongycastle.util.encoders.Base64;
@@ -60,10 +61,10 @@ public class TrezorV1SignMessageExample {
   public void executeExample() {
 
     // Use factory to statically bind the specific hardware wallet
-    TrezorV1UsbHardwareWallet wallet = HardwareWallets.newUsbInstance(
-      TrezorV1UsbHardwareWallet.class,
-      Optional.<Short>absent(),
-      Optional.<Short>absent(),
+    TrezorV1HidHardwareWallet wallet = HardwareWallets.newUsbInstance(
+            TrezorV1HidHardwareWallet.class,
+      Optional.<Integer>absent(),
+      Optional.<Integer>absent(),
       Optional.<String>absent()
     );
 
@@ -74,7 +75,7 @@ public class TrezorV1SignMessageExample {
     hardwareWalletService = new HardwareWalletService(client);
 
     // Register for the high level hardware wallet events
-    HardwareWalletService.hardwareWalletEventBus.register(this);
+    HardwareWalletEvents.subscribe(this);
 
     hardwareWalletService.start();
 

@@ -1,18 +1,20 @@
 package org.multibit.hd.hardware.examples.trezor.usb;
 
-import com.google.bitcoin.core.Utils;
-import com.google.bitcoin.wallet.KeyChain;
+import com.google.common.base.Charsets;
+import org.bitcoinj.core.Utils;
+import org.bitcoinj.wallet.KeyChain;
 import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.Uninterruptibles;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.HardwareWalletService;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvent;
+import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.messages.PinMatrixRequest;
 import org.multibit.hd.hardware.core.messages.Success;
 import org.multibit.hd.hardware.core.wallets.HardwareWallets;
 import org.multibit.hd.hardware.trezor.clients.TrezorHardwareWalletClient;
-import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1UsbHardwareWallet;
+import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1HidHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,10 +58,10 @@ public class TrezorV1CipherKeyExample {
   public void executeExample() {
 
     // Use factory to statically bind the specific hardware wallet
-    TrezorV1UsbHardwareWallet wallet = HardwareWallets.newUsbInstance(
-      TrezorV1UsbHardwareWallet.class,
-      Optional.<Short>absent(),
-      Optional.<Short>absent(),
+    TrezorV1HidHardwareWallet wallet = HardwareWallets.newUsbInstance(
+            TrezorV1HidHardwareWallet.class,
+      Optional.<Integer>absent(),
+      Optional.<Integer>absent(),
       Optional.<String>absent()
     );
 
@@ -70,7 +72,7 @@ public class TrezorV1CipherKeyExample {
     hardwareWalletService = new HardwareWalletService(client);
 
     // Register for the high level hardware wallet events
-    HardwareWalletService.hardwareWalletEventBus.register(this);
+    HardwareWalletEvents.subscribe(this);
 
     hardwareWalletService.start();
 
@@ -103,9 +105,8 @@ public class TrezorV1CipherKeyExample {
 
           log.debug("Wallet is present. Request cipher key");
 
-          byte[] key = "MultiBit HD     Wallet ID".getBytes();
-          byte[] keyValue = "0123456789abcdef".getBytes();
-
+          byte[] key = "MultiBit HD     Unlock".getBytes(Charsets.UTF_8);
+          byte[] keyValue = "0123456789abcdef".getBytes(Charsets.UTF_8);
           // Request an address from the device using BIP-44 chain code:
           hardwareWalletService.requestCipherKey(
             0,
@@ -141,9 +142,17 @@ public class TrezorV1CipherKeyExample {
         }
         break;
       case SHOW_OPERATION_SUCCEEDED:
-        byte[] payload = ((Success) event.getMessage().get()).getPayload();
+        // Check that the service has the entropy
+        byte[] payload = hardwareWalletService.getContext().getEntropy().get();
         String message = ((Success) event.getMessage().get()).getMessage();
-        log.info("Message:'{}'\nPayload: {} (Deterministic: {})", message, Utils.HEX.encode(payload), Utils.HEX.encode(payload).equals("be3c43189407284bb3fd1ac0040db1e0"));
+
+        // Requires the MultiBit Dev wallet to resolve as deterministic
+        log.info(
+          "Message:'{}'\nPayload: {} (Deterministic: {})",
+          message,
+          Utils.HEX.encode(payload),
+          Utils.HEX.encode(payload).equals("be3c43189407284bb3fd1ac0040db1e0")
+        );
         // Treat as end of example
         System.exit(0);
         break;

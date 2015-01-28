@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <p>Trezor implementation to provide the following to applications:</p>
@@ -80,6 +81,47 @@ public class TrezorShieldSocketHardwareWallet extends AbstractTrezorHardwareWall
   }
 
   @Override
+  public void softDetach() {
+
+    if (socket == null) {
+      return;
+    }
+
+    // Attempt to close the socket (also closes the in/out streams)
+    try {
+      socket.close();
+      log.info("Detached from Trezor");
+
+      // Must have disconnected to be here
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED);
+
+    } catch (IOException e) {
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_FAILED);
+    }
+  }
+
+  @Override
+  public void hardDetach() {
+
+    if (socket == null) {
+      return;
+    }
+
+    // Attempt to close the socket (also closes the in/out streams)
+    try {
+      socket.close();
+      log.info("Hard detach from Trezor");
+
+      // Must have detached to be here
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED);
+
+    } catch (IOException e) {
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_FAILED);
+    }
+
+  }
+
+  @Override
   public synchronized boolean connect() {
 
     Preconditions.checkState(socket == null, "Socket is already connected");
@@ -110,25 +152,7 @@ public class TrezorShieldSocketHardwareWallet extends AbstractTrezorHardwareWall
   }
 
   @Override
-  public synchronized void detach() {
-
-    Preconditions.checkNotNull(socket, "Socket is not connected. Use connect() first.");
-
-    // Attempt to close the socket (also closes the in/out streams)
-    try {
-      socket.close();
-      log.info("Disconnected from Trezor");
-
-      // Must have disconnected to be here
-      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED);
-
-    } catch (IOException e) {
-      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_FAILED);
-    }
-  }
-
-  @Override
-  protected MessageEvent readFromDevice() {
+  protected com.google.common.base.Optional<MessageEvent> readFromDevice(int duration, TimeUnit timeUnit) {
 
     // TODO Implement this using the Trezor V1 as a template
 

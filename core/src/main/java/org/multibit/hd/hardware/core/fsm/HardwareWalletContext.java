@@ -1,20 +1,27 @@
 package org.multibit.hd.hardware.core.fsm;
 
-import com.google.bitcoin.core.Transaction;
-import com.google.bitcoin.wallet.KeyChain;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.eventbus.Subscribe;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.crypto.DeterministicHierarchy;
+import org.bitcoinj.crypto.DeterministicKey;
+import org.bitcoinj.wallet.KeyChain;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
-import org.multibit.hd.hardware.core.HardwareWalletService;
 import org.multibit.hd.hardware.core.events.HardwareWalletEventType;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.events.MessageEvent;
+import org.multibit.hd.hardware.core.events.MessageEvents;
 import org.multibit.hd.hardware.core.messages.Features;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,8 +40,6 @@ import java.util.Map;
 public class HardwareWalletContext {
 
   private static final Logger log = LoggerFactory.getLogger(HardwareWalletContext.class);
-
-  private Optional<Features> features = Optional.absent();
 
   /**
    * The hardware wallet client handling outgoing messages and generating low level
@@ -64,6 +69,11 @@ public class HardwareWalletContext {
   private Optional<LoadWalletSpecification> loadWalletSpecification = Optional.absent();
 
   /**
+   * Provide the features
+   */
+  private Optional<Features> features = Optional.absent();
+
+  /**
    * Provide the transaction forming the basis for the "sign transaction" use case
    */
   private Optional<Transaction> transaction = Optional.absent();
@@ -78,15 +88,55 @@ public class HardwareWalletContext {
   private ByteArrayOutputStream serializedTx = new ByteArrayOutputStream();
 
   /**
+   * A map keyed on TxInput index and the associated path to the receiving address on that input
+   * This is used during Trezor transaction signing for fast addressN lookup
+   */
+  private Map<Integer, ImmutableList<ChildNumber>> receivingAddressPathMap;
+
+  /**
+   * A map keyed on TxOutput Address and the associated path to the change address on that output
+   * This is used during Trezor transaction signing for fast addressN lookup, removes the need
+   * to confirm a change address and ensures the transaction balance is correct on the display
+   */
+  private Map<Address, ImmutableList<ChildNumber>> changeAddressPathMap;
+
+  /**
+   * Provide a list of child numbers defining the HD path required.
+   * In the case of an extended public key this will result in multiple calls to retrieve each parent
+   * due to hardening.
+   *
+   * The end result can be found in {@link #deterministicHierarchy}.
+   */
+  private Optional<List<ChildNumber>> childNumbers = Optional.absent();
+
+  /**
+   * Provide a deterministic key representing the root node of the current HD path.
+   * As the child numbers are explored one by one this deterministic key maintains the chain
+   * of keys derived from the base 58 xpub.
+   *
+   * The end result can be found in {@link #deterministicHierarchy}.
+   */
+  private Optional<DeterministicKey> deterministicKey = Optional.absent();
+  /**
+   * Provide a deterministic hierarchy containing all hardened extended public keys so that a
+   * watching wallet can be created
+   */
+  private Optional<DeterministicHierarchy> deterministicHierarchy = Optional.absent();
+
+  /**
+   * Entropy returned from the Trezor (result of encryption of fixed text)
+   */
+  private Optional<byte[]> entropy = Optional.absent();
+
+  /**
    * @param client The hardware wallet client
    */
   public HardwareWalletContext(HardwareWalletClient client) {
 
     this.client = client;
 
-    // Ensure the service is subscribed to low level message events
-    // from the client
-    HardwareWalletService.messageEventBus.register(this);
+    // Ensure the service is subscribed to low level message events from the client
+    MessageEvents.subscribe(this);
 
     // Verify the environment
     if (!client.attach()) {
@@ -122,6 +172,87 @@ public class HardwareWalletContext {
   }
 
   /**
+   * <p>Note: When adding this signature using the builder setScriptSig() you'll need to append the SIGHASH 0x01 byte</p>
+   *
+   * @return The map of ECDSA signatures provided by the device during "sign transaction" keyed on the input index
+   */
+  public Map<Integer, byte[]> getSignatures() {
+    return signatures;
+  }
+
+  /**
+   * This value cannot be considered complete until the "SHOW_OPERATION_SUCCESSFUL" message has been received
+   * since it can be built up over several incoming messages
+   *
+   * @return The serialized transaction provided by the device during "sign transaction"
+   */
+  public ByteArrayOutputStream getSerializedTx() {
+    return serializedTx;
+  }
+
+  /**
+   * <p>Reset all context state to ensure a fresh context</p>
+   */
+  private void resetAll() {
+
+    createWalletSpecification = Optional.absent();
+    loadWalletSpecification = Optional.absent();
+
+    features = Optional.absent();
+
+    transaction = Optional.absent();
+    signatures = Maps.newHashMap();
+
+    serializedTx = new ByteArrayOutputStream();
+    receivingAddressPathMap = Maps.newHashMap();
+    changeAddressPathMap = Maps.newHashMap();
+
+    childNumbers = Optional.absent();
+    deterministicKey = Optional.absent();
+    deterministicHierarchy = Optional.absent();
+
+    entropy = Optional.absent();
+
+  }
+
+  /**
+   * <p>Reset all context state, excepting Features, to ensure a fresh context</p>
+   */
+  private void resetAllButFeatures() {
+
+    Optional<Features> originalFeatures = this.features;
+
+    resetAll();
+
+    this.features = originalFeatures;
+
+  }
+
+  /**
+   * <p>Reset the context into a stopped state (the service will have to be stopped and a new one started)</p>
+   */
+  public void resetToStopped() {
+
+    log.debug("Reset to 'stopped'");
+
+    // Clear relevant information
+    resetAllButFeatures();
+
+    // Issue a hard detach - we are done
+    client.hardDetach();
+
+    // Unsubscribe from events
+    MessageEvents.unsubscribe(this);
+
+    // Perform the state change
+    currentState = HardwareWalletStates.newStoppedState();
+
+    // Fire the high level event
+    HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_DEVICE_STOPPED);
+
+  }
+
+  /**
    * <p>Reset the context back to a failed state (retain device information but prevent further communication)</p>
    */
   public void resetToFailed() {
@@ -129,7 +260,7 @@ public class HardwareWalletContext {
     log.debug("Reset to 'failed'");
 
     // Clear relevant information
-    createWalletSpecification = Optional.absent();
+    resetAllButFeatures();
 
     // Perform the state change
     currentState = HardwareWalletStates.newFailedState();
@@ -146,8 +277,7 @@ public class HardwareWalletContext {
     log.debug("Reset to 'detached'");
 
     // Clear relevant information
-    createWalletSpecification = Optional.absent();
-    features = Optional.absent();
+    resetAll();
 
     // Perform the state change
     currentState = HardwareWalletStates.newDetachedState();
@@ -163,10 +293,8 @@ public class HardwareWalletContext {
 
     log.debug("Reset to 'attached'");
 
-    // TODO Ensure all context fields are reset here
     // Clear relevant information
-    createWalletSpecification = Optional.absent();
-    features = Optional.absent();
+    resetAll();
 
     // Perform the state change
     currentState = HardwareWalletStates.newAttachedState();
@@ -182,8 +310,7 @@ public class HardwareWalletContext {
     log.debug("Reset to 'connected'");
 
     // Clear relevant information
-    createWalletSpecification = Optional.absent();
-    features = Optional.absent();
+    resetAll();
 
     // Perform the state change
     currentState = HardwareWalletStates.newConnectedState();
@@ -199,7 +326,7 @@ public class HardwareWalletContext {
     log.debug("Reset to 'disconnected'");
 
     // Clear relevant information
-    createWalletSpecification = Optional.absent();
+    resetAll();
 
     // Perform the state change
     currentState = HardwareWalletStates.newDisconnectedState();
@@ -216,30 +343,13 @@ public class HardwareWalletContext {
     log.debug("Reset to 'initialised'");
 
     // Clear relevant information
-    createWalletSpecification = Optional.absent();
+    resetAllButFeatures();
 
     // Perform the state change
     currentState = HardwareWalletStates.newInitialisedState();
 
     // Fire the high level event
     HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_DEVICE_READY, features.get());
-  }
-
-  /**
-   * <p>Begin the "wipe device" use case</p>
-   */
-  public void beginWipeDeviceUseCase() {
-
-    log.debug("Begin 'wipe device' use case");
-
-    // Track the use case
-    currentUseCase = ContextUseCase.WIPE_DEVICE;
-
-    // Set the event receiving state
-    currentState = HardwareWalletStates.newConfirmWipeState();
-
-    // Issue starting message to elicit the event
-    client.wipeDevice();
   }
 
   /**
@@ -264,6 +374,50 @@ public class HardwareWalletContext {
   }
 
   /**
+   * @return The map of paths for our receiving addresses on the current transaction (key input index, value deterministic path to receiving address)
+   */
+  public Map<Integer, ImmutableList<ChildNumber>> getReceivingAddressPathMap() {
+    return receivingAddressPathMap;
+  }
+
+  /**
+   * @return The map of paths for the change address (key address, value deterministic path to change address)
+   */
+  public Map<Address, ImmutableList<ChildNumber>> getChangeAddressPathMap() {
+    return changeAddressPathMap;
+  }
+
+  /**
+   * @return The list of child numbers representing a HD path for the current use case
+   */
+  public Optional<List<ChildNumber>> getChildNumbers() {
+    return childNumbers;
+  }
+
+  /**
+   * @return The deterministic key derived from the xpub of the given child numbers for the current use case
+   */
+  public Optional<DeterministicKey> getDeterministicKey() {
+    return deterministicKey;
+  }
+
+  public void setDeterministicKey(DeterministicKey deterministicKey) {
+    log.debug("Setting deterministic key"); // Avoid logging the deterministic key
+    this.deterministicKey = Optional.fromNullable(deterministicKey);
+  }
+
+  /**
+   * @return The deterministic hierarchy based on the deterministic key for the current use case
+   */
+  public Optional<DeterministicHierarchy> getDeterministicHierarchy() {
+    return deterministicHierarchy;
+  }
+
+  public void setDeterministicHierarchy(DeterministicHierarchy deterministicHierarchy) {
+    this.deterministicHierarchy = Optional.fromNullable(deterministicHierarchy);
+  }
+
+  /**
    * @return The current use case
    */
   public ContextUseCase getCurrentUseCase() {
@@ -276,11 +430,14 @@ public class HardwareWalletContext {
   @Subscribe
   public void onMessageEvent(MessageEvent event) {
 
-    log.debug("Received message event: '{}'.'{}'", event.getEventType().name(), event.getMessage());
+    log.debug("Received message event: '{}'", event.getEventType().name());
 
     // Perform a state transition as a result of this event
-    currentState.transition(client, this, event);
-
+    try {
+      currentState.transition(client, this, event);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
   }
 
   /**
@@ -335,6 +492,9 @@ public class HardwareWalletContext {
 
     log.debug("Begin 'change PIN' use case");
 
+    // Clear relevant information
+    resetAllButFeatures();
+
     // Track the use case
     currentUseCase = ContextUseCase.CHANGE_PIN;
 
@@ -366,6 +526,25 @@ public class HardwareWalletContext {
 
   }
 
+  /**
+   * <p>Begin the "wipe device" use case</p>
+   */
+  public void beginWipeDeviceUseCase() {
+
+    log.debug("Begin 'wipe device' use case");
+
+    // Clear relevant information
+    resetAllButFeatures();
+
+    // Track the use case
+    currentUseCase = ContextUseCase.WIPE_DEVICE;
+
+    // Set the event receiving state
+    currentState = HardwareWalletStates.newConfirmWipeState();
+
+    // Issue starting message to elicit the event
+    client.wipeDevice();
+  }
 
   /**
    * <p>Begin the "get address" use case</p>
@@ -378,6 +557,9 @@ public class HardwareWalletContext {
   public void beginGetAddressUseCase(int account, KeyChain.KeyPurpose keyPurpose, int index, boolean showDisplay) {
 
     log.debug("Begin 'get address' use case");
+
+    // Clear relevant information
+    resetAllButFeatures();
 
     // Track the use case
     currentUseCase = ContextUseCase.REQUEST_ADDRESS;
@@ -408,6 +590,9 @@ public class HardwareWalletContext {
 
     log.debug("Begin 'get public key' use case");
 
+    // Clear relevant information
+    resetAllButFeatures();
+
     // Track the use case
     currentUseCase = ContextUseCase.REQUEST_PUBLIC_KEY;
 
@@ -422,6 +607,34 @@ public class HardwareWalletContext {
       keyPurpose,
       index
     );
+
+  }
+
+  /**
+   * <p>Begin the "get deterministic hierarchy" use case</p>
+   *
+   * @param childNumbers The child numbers describing the required chain from the master node including hardening bits
+   */
+  public void beginGetDeterministicHierarchyUseCase(List<ChildNumber> childNumbers) {
+
+    log.debug("Begin 'get deterministic hierarchy' use case");
+
+    // Clear relevant information
+    resetAllButFeatures();
+
+    // Track the use case
+    currentUseCase = ContextUseCase.REQUEST_DETERMINISTIC_HIERARCHY;
+
+    // Store the overall context parameters
+    this.childNumbers = Optional.of(childNumbers);
+
+    // Set the event receiving state
+    currentState = HardwareWalletStates.newConfirmGetDeterministicHierarchyState();
+
+    // Issue starting message to elicit the event
+    // In this case we start with the master node (empty list) to enable building up a complete
+    // hierarchy in case of hardened child numbers that require private keys to create
+    client.getDeterministicHierarchy(Lists.<ChildNumber>newArrayList());
 
   }
 
@@ -442,6 +655,9 @@ public class HardwareWalletContext {
 
     log.debug("Begin 'sign message' use case");
 
+    // Clear relevant information
+    resetAllButFeatures();
+
     // Track the use case
     currentUseCase = ContextUseCase.SIGN_MESSAGE;
 
@@ -458,7 +674,6 @@ public class HardwareWalletContext {
       message
     );
   }
-
 
   /**
    * <p>Continue the "sign message" use case with the provision of the current PIN</p>
@@ -527,6 +742,25 @@ public class HardwareWalletContext {
   }
 
   /**
+   * <p>Continue the "cipher key" use case with the provision of the current PIN</p>
+   *
+   * @param pin The PIN
+   */
+  public void continueCipherKey_PIN(String pin) {
+
+    log.debug("Continue 'cipher key' use case (provide PIN)");
+
+    // Store the overall context parameters
+
+    // Set the event receiving state
+    currentState = HardwareWalletStates.newConfirmCipherKeyState();
+
+    // Issue starting message to elicit the event
+    client.pinMatrixAck(pin);
+
+  }
+
+  /**
    * <p>Begin the "load wallet" use case</p>
    *
    * @param specification The specification describing the use of PIN, seed strength etc
@@ -534,6 +768,9 @@ public class HardwareWalletContext {
   public void beginLoadWallet(LoadWalletSpecification specification) {
 
     log.debug("Begin 'load wallet' use case");
+
+    // Clear relevant information
+    resetAllButFeatures();
 
     // Track the use case
     currentUseCase = ContextUseCase.LOAD_WALLET;
@@ -576,6 +813,9 @@ public class HardwareWalletContext {
   public void beginCreateWallet(CreateWalletSpecification specification) {
 
     log.debug("Begin 'create wallet on device' use case");
+
+    // Clear relevant information
+    resetAllButFeatures();
 
     // Track the use case
     currentUseCase = ContextUseCase.CREATE_WALLET;
@@ -633,39 +873,29 @@ public class HardwareWalletContext {
   }
 
   /**
-   * <p>Begin the "simple sign transaction" use case</p>
-   *
-   * @param transaction The transaction containing the inputs and outputs
-   */
-  public void beginSimpleSignTxUseCase(Transaction transaction) {
-
-    log.debug("Begin 'simple sign transaction' use case");
-
-    // Store the overall context parameters
-    this.transaction = Optional.of(transaction);
-
-    // Set the event receiving state
-    currentState = HardwareWalletStates.newConfirmSignTxState();
-
-    // Issue starting message to elicit the event
-    client.simpleSignTx(transaction);
-
-  }
-
-  /**
    * <p>Begin the "sign transaction" use case</p>
    *
-   * @param transaction The transaction containing the inputs and outputs
+   * @param transaction             The transaction containing the inputs and outputs
+   * @param receivingAddressPathMap The map of paths for our receiving addresses
+   * @param changeAddressPathMap    The map paths for our change address
    */
-  public void beginSignTxUseCase(Transaction transaction) {
+  public void beginSignTxUseCase(
+    Transaction transaction,
+    Map<Integer, ImmutableList<ChildNumber>> receivingAddressPathMap,
+    Map<Address, ImmutableList<ChildNumber>> changeAddressPathMap) {
 
     log.debug("Begin 'sign transaction' use case");
+
+    // Clear relevant information
+    resetAllButFeatures();
 
     // Track the use case
     currentUseCase = ContextUseCase.SIGN_TX;
 
     // Store the overall context parameters
     this.transaction = Optional.of(transaction);
+    this.receivingAddressPathMap = receivingAddressPathMap;
+    this.changeAddressPathMap = changeAddressPathMap;
 
     // Set the event receiving state
     currentState = HardwareWalletStates.newConfirmSignTxState();
@@ -695,40 +925,19 @@ public class HardwareWalletContext {
   }
 
   /**
-   * <p>Continue the "cipher key" use case with the provision of the current PIN</p>
-   *
-   * @param pin The PIN
+   * @return Entropy returned from the Trezor (result of encryption of fixed text)
    */
-  public void continueCipherKey_PIN(String pin) {
-
-    log.debug("Continue 'cipher key' use case (provide PIN)");
-
-    // Store the overall context parameters
-
-    // Set the event receiving state
-    currentState = HardwareWalletStates.newConfirmCipherKeyState();
-
-    // Issue starting message to elicit the event
-    client.pinMatrixAck(pin);
-
+  public Optional<byte[]> getEntropy() {
+    return entropy;
   }
 
   /**
-   * <p>Note: When adding this signature using the builder setScriptSig() you'll need to append the SIGHASH 0x01 byte</p>
+   * <p>This is normally called after a successful cipher key operation</p>
    *
-   * @return The map of ECDSA signatures provided by the device during "sign transaction" keyed on the input index
+   * @param entropy The entropy to set
    */
-  public Map<Integer, byte[]> getSignatures() {
-    return signatures;
+  public void setEntropy(byte[] entropy) {
+    this.entropy = Optional.fromNullable(entropy);
   }
 
-  /**
-   * This value cannot be considered complete until the "SHOW_OPERATION_SUCCESSFUL" message has been received
-   * since it can be built up over several incoming messages
-   *
-   * @return The serialized transaction provided by the device during "sign transaction"
-   */
-  public ByteArrayOutputStream getSerializedTx() {
-    return serializedTx;
-  }
 }

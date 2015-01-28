@@ -23,6 +23,17 @@ public class HardwareWalletStates {
   }
 
   /**
+   * @return A new stopped state
+   */
+  public static StoppedState newStoppedState() {
+
+    log.debug("Transitioning to 'stopped' state");
+
+    return new StoppedState();
+
+  }
+
+  /**
    * @return A new detached state
    */
   public static DetachedState newDetachedState() {
@@ -162,6 +173,17 @@ public class HardwareWalletStates {
     log.debug("Transitioning to 'confirm GetPublicKey' state");
 
     return new ConfirmGetPublicKeyState();
+
+  }
+
+  /**
+   * @return A new confirm get deterministic hierarchy state
+   */
+  public static ConfirmGetDeterministicHierarchyState newConfirmGetDeterministicHierarchyState() {
+
+    log.debug("Transitioning to 'confirm GetDeterministicHierarchy' state");
+
+    return new ConfirmGetDeterministicHierarchyState();
 
   }
 

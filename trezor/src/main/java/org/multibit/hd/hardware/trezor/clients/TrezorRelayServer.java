@@ -3,14 +3,15 @@ package org.multibit.hd.hardware.trezor.clients;
 import com.google.common.base.Optional;
 import com.google.common.collect.Queues;
 import com.google.common.eventbus.Subscribe;
+import com.google.common.util.concurrent.Uninterruptibles;
 import com.google.protobuf.Message;
-import org.multibit.hd.hardware.core.HardwareWalletService;
 import org.multibit.hd.hardware.core.concurrent.SafeExecutors;
+import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.events.MessageEvent;
 import org.multibit.hd.hardware.core.events.MessageEventType;
 import org.multibit.hd.hardware.core.wallets.HardwareWallet;
 import org.multibit.hd.hardware.trezor.utils.TrezorMessageUtils;
-import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1UsbHardwareWallet;
+import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1HidHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +21,7 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  *  <p>Server to provide the following to RelayClient:<br>
@@ -39,7 +41,7 @@ public class TrezorRelayServer {
   /**
    * The hardware wallet representing the locally connected hardware device
    */
-  private TrezorV1UsbHardwareWallet hardwareWallet;
+  private TrezorV1HidHardwareWallet hardwareWallet;
 
   /**
    * The port number to use for the server socket. A RelayClient will connect to this port
@@ -69,13 +71,13 @@ public class TrezorRelayServer {
 
 
   /**
-   * Create a RelayServer, wrapping a Trezor V1 USB device, exposing port 3000
+   * Create a RelayServer, wrapping a Trezor V1 HID device, exposing port 3000
    */
   public TrezorRelayServer() {
-    // Create a Trezor V1 usb client
-    TrezorV1UsbHardwareWallet hardwareWallet = new TrezorV1UsbHardwareWallet(
-      Optional.<Short>absent(),
-      Optional.<Short>absent(),
+    // Create a Trezor V1 HID client
+    TrezorV1HidHardwareWallet hardwareWallet = new TrezorV1HidHardwareWallet(
+      Optional.<Integer>absent(),
+      Optional.<Integer>absent(),
       Optional.<String>absent()
     );
     create(hardwareWallet, DEFAULT_PORT_NUMBER);
@@ -84,23 +86,25 @@ public class TrezorRelayServer {
   /**
    * Create a RelayServer using a HardwareWallet instance and the specified port
    */
-  public TrezorRelayServer(TrezorV1UsbHardwareWallet hardwareWallet, int portNumber) throws IOException {
+  public TrezorRelayServer(TrezorV1HidHardwareWallet hardwareWallet, int portNumber) throws IOException {
     create(hardwareWallet, portNumber);
   }
 
-  private void create(TrezorV1UsbHardwareWallet hardwareWallet, int portNumber) {
+  private void create(TrezorV1HidHardwareWallet hardwareWallet, int portNumber) {
 
     this.hardwareWallet = hardwareWallet;
     this.portNumber = portNumber;
 
-    HardwareWalletService.hardwareWalletEventBus.register(this);
+    // Subscribe to the high level events from the client
+    HardwareWalletEvents.subscribe(this);
 
-    serverExecutorService.submit(new Runnable() {
-      @Override
-      public void run() {
-        start();
-      }
-    });
+    serverExecutorService.submit(
+      new Runnable() {
+        @Override
+        public void run() {
+          start();
+        }
+      });
   }
 
   public int getPortNumber() {
@@ -161,21 +165,31 @@ public class TrezorRelayServer {
    */
   private void monitorHardwareWallet(final OutputStream outputToClient) {
     // Monitor the data input stream
-    hardwareWalletMonitorService.submit(new Runnable() {
+    hardwareWalletMonitorService.submit(
+      new Runnable() {
 
-      @Override
-      public void run() {
-        while (true) {
-          log.debug("Waiting for hardware wallet message...");
-          MessageEvent messageEvent = hardwareWallet.readMessage();
+        @Override
+        public void run() {
+          while (true) {
+            log.debug("Waiting for hardware wallet message...");
+            Optional<MessageEvent> messageEvent = hardwareWallet.readMessage(1, TimeUnit.MINUTES);
 
-          // Send the Message back to the client
-          log.debug("Sending raw message to client");
-          writeMessage(messageEvent.getRawMessage().get(), outputToClient);
+            if (messageEvent.isPresent()) {
+
+              if (MessageEventType.DEVICE_FAILED.equals(messageEvent.get().getEventType())) {
+                // Stop reading messages on this thread for a short while to allow recovery time
+                Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+              } else {
+
+                // Send the Message back to the client
+                log.debug("Sending raw message to client");
+                writeMessage(messageEvent.get().getRawMessage().get(), outputToClient);
+              }
+            }
+          }
         }
-      }
 
-    });
+      });
   }
 
   /**
@@ -183,29 +197,30 @@ public class TrezorRelayServer {
    */
   private void monitorClient(final InputStream inputFromClient) {
     // Monitor the data input stream
-    clientMonitorService.submit(new Runnable() {
+    clientMonitorService.submit(
+      new Runnable() {
 
-      @Override
-      public void run() {
-        while (true) {
-          try {
-            // Blocking read to get the client message (e.g. "Initialize") formatted as HID packets for simplicity
-            log.debug("Waiting for client message...");
+        @Override
+        public void run() {
+          while (true) {
+            try {
+              // Blocking read to get the client message (e.g. "Initialize") formatted as HID packets for simplicity
+              log.debug("Waiting for client message...");
 
-            MessageEvent messageFromClient = TrezorMessageUtils.parseAsHIDPackets(inputFromClient);
+              MessageEvent messageFromClient = TrezorMessageUtils.parseAsHIDPackets(inputFromClient);
 
-            // Send the Message to the trezor (serialising again to protobuf)
-            log.debug("Writing message to hardware wallet");
-            hardwareWallet.writeMessage(messageFromClient.getRawMessage().get());
+              // Send the Message to the trezor (serialising again to protobuf)
+              log.debug("Writing message to hardware wallet");
+              hardwareWallet.writeMessage(messageFromClient.getRawMessage().get());
 
-          } catch (Exception e) {
-            log.error("Failed in hardware wallet/client read", e);
-            break;
+            } catch (Exception e) {
+              log.error("Failed in hardware wallet/client read", e);
+              break;
+            }
           }
         }
-      }
 
-    });
+      });
   }
 
 
@@ -235,7 +250,8 @@ public class TrezorRelayServer {
         s += String.format(" %02x", buffer[j]);
       }
 
-      log.debug("> Client {}", s);
+      // There is a security risk to raising this logging level beyond trace
+      log.trace("> Client {}", s);
 
       try {
         out.write(buffer);

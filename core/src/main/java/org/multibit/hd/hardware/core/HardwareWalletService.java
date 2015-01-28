@@ -1,12 +1,15 @@
 package org.multibit.hd.hardware.core;
 
-import com.google.bitcoin.core.Transaction;
-import com.google.bitcoin.wallet.KeyChain;
 import com.google.common.base.Preconditions;
-import com.google.common.eventbus.EventBus;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.Uninterruptibles;
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.ListeningScheduledExecutorService;
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.crypto.ChildNumber;
+import org.bitcoinj.wallet.KeyChain;
 import org.multibit.hd.hardware.core.concurrent.SafeExecutors;
+import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
+import org.multibit.hd.hardware.core.events.MessageEvents;
 import org.multibit.hd.hardware.core.fsm.CreateWalletSpecification;
 import org.multibit.hd.hardware.core.fsm.HardwareWalletContext;
 import org.multibit.hd.hardware.core.fsm.LoadWalletSpecification;
@@ -15,6 +18,8 @@ import org.slf4j.LoggerFactory;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -35,23 +40,19 @@ public class HardwareWalletService {
   private static final Logger log = LoggerFactory.getLogger(HardwareWalletService.class);
 
   /**
-   * The EventBus for distributing the high level hardware wallet events
-   * Downstream consumers are expected to use this
+   * Monitors the hardware client to manage state transitions in response to incoming messages
    */
-  public static final EventBus hardwareWalletEventBus = new EventBus();
-
-  /**
-   * The EventBus for distributing the low level hardware wallet events
-   * <strong>Downstream consumers should not use this</strong>
-   */
-  public static final EventBus messageEventBus = new EventBus();
-
-  private final ListeningExecutorService clientMonitorService = SafeExecutors.newSingleThreadExecutor("monitor-hw-client");
+  private final ListeningScheduledExecutorService clientMonitorService = SafeExecutors.newSingleThreadScheduledExecutor("monitor-hw-client");
 
   /**
    * The current hardware wallet context
    */
   private final HardwareWalletContext context;
+
+  /**
+   * True if the service has stopped
+   */
+  private boolean stopped = false;
 
   /**
    * @param client The hardware wallet client providing the low level messages
@@ -68,20 +69,42 @@ public class HardwareWalletService {
    */
   public void start() {
 
+    if (stopped) {
+      throw new IllegalStateException("Once stopped the service must be started with a fresh instance");
+    }
+
     // Start the hardware wallet state machine
-    clientMonitorService.submit(
+    clientMonitorService.scheduleWithFixedDelay(
       new Runnable() {
         @Override
         public void run() {
 
-          while (true) {
+          // Note: If an unhandled error occurs in a scheduled exception
+          // it causes all future requests to be suppressed
+          // We want to alert the user to a failure and keep active
+          // to avoid "silent failures"
+
+          try {
+
+            // It if we are in the await state then we use a client
+            // call (e.g. initialise()) to poke the device to elicit
+            // a low level message response
             context.getState().await(context);
-
-            Uninterruptibles.sleepUninterruptibly(500, TimeUnit.MILLISECONDS);
-
+          } catch (RuntimeException e) {
+            log.error("Unexpected error transitioning between states", e);
+            // Trigger a failure mode
+            context.resetToFailed();
           }
+
         }
-      }
+      },
+      0, // Immediate start
+      // Delay time in order to progress the state
+      // Devices will respond with some kind of event within 1 second for states that are
+      // awaiting progression (e.g. Connected -> Initialised)
+      // Setting this lower has no effect on speed of operations and may introduce
+      // instability with overlapping calls due to "impatience"
+      1, TimeUnit.SECONDS
     );
   }
 
@@ -92,8 +115,28 @@ public class HardwareWalletService {
 
     log.debug("Service {} stopping...", this.getClass().getSimpleName());
 
-    clientMonitorService.shutdownNow();
+    context.resetToStopped();
 
+    // Ensure downstream subscribers are purged
+    HardwareWalletEvents.unsubscribeAll();
+    MessageEvents.unsubscribeAll();
+
+    try {
+      clientMonitorService.awaitTermination(1, TimeUnit.SECONDS);
+    } catch (InterruptedException e) {
+      log.warn("Client monitor thread did not terminate within the allowed time");
+    }
+
+    stopped = true;
+
+  }
+
+  /**
+   * @return True if the service is stopped
+   */
+  public boolean isStopped() {
+
+    return stopped;
   }
 
   /**
@@ -104,9 +147,18 @@ public class HardwareWalletService {
   }
 
   /**
-   * @return True if the hardware wallet has been initialised with a seed phrase, PIN, passphrase etc.
+   * @return True if the hardware wallet has been attached and a successful connection made
+   */
+  public boolean isDeviceReady() {
+
+    return context.getFeatures().isPresent();
+
+  }
+
+  /**
+   * @return True if the hardware wallet has been initialised with a seed phrase (<code>Features.isInitialised()</code>)
    *
-   * @throws IllegalStateException If called when the device is not ready
+   * @throws IllegalStateException If called when the device is not ready (see <code>isDeviceReady()</code>)
    */
   public boolean isWalletPresent() {
 
@@ -115,6 +167,18 @@ public class HardwareWalletService {
     }
 
     return context.getFeatures().get().isInitialized();
+
+  }
+
+  /**
+   * <p>Cancel the current operation and return to the initialised state</p>
+   *
+   * <p>This will trigger a SHOW_OPERATION_FAILED and a DEVICE_READY event during the reset phase</p>
+   */
+  public void requestCancel() {
+
+    // Let the state changes occur as a result of the internal messages
+    context.getClient().cancel();
 
   }
 
@@ -147,14 +211,14 @@ public class HardwareWalletService {
    * @param label         The label to display below the logo (e.g "Fred")
    * @param displayRandom True if the device should display the entropy generated by the device before asking for additional entropy
    * @param pinProtection True if the device should use PIN protection
-   * @param wordCount     The number of words in the seed phrase (12 (default) is 128 bits, 18 is 196 bits, 24 is 256 bits)
+   * @param strength      The number of bits in the seed phrase (128 bits = 12 words, 196 bits = 18 words, 256 bits = 24 words)
    */
   public void secureCreateWallet(
     String language,
     String label,
     boolean displayRandom,
     boolean pinProtection,
-    int wordCount
+    int strength
   ) {
 
     // Create the specification
@@ -163,7 +227,7 @@ public class HardwareWalletService {
       label,
       displayRandom,
       pinProtection,
-      wordCount
+      strength
     );
 
     // Set the FSM context
@@ -226,8 +290,8 @@ public class HardwareWalletService {
       case SIGN_MESSAGE:
         context.continueSignMessage_PIN(pin);
         break;
-        case CHANGE_PIN:
-          context.continueChangePIN_PIN(pin);
+      case CHANGE_PIN:
+        context.continueChangePIN_PIN(pin);
         break;
       default:
         log.warn("Unknown PIN request use case: {}", context.getCurrentUseCase().name());
@@ -296,6 +360,21 @@ public class HardwareWalletService {
 
     // Set the FSM context
     context.beginGetPublicKeyUseCase(account, keyPurpose, index);
+
+  }
+
+  /**
+   * <p>Request a deterministic hierarchy based on the given child numbers.</p>
+   *
+   * <p>This can be used to create a "watching wallet" that does not contain any private keys so long
+   * as all hardened child numbers are included.</p>
+   *
+   * @param childNumbers The list of child numbers representing a path that may include hardened entries
+   */
+  public void requestDeterministicHierarchy(List<ChildNumber> childNumbers) {
+
+    // Set the FSM context
+    context.beginGetDeterministicHierarchyUseCase(childNumbers);
 
   }
 
@@ -381,24 +460,30 @@ public class HardwareWalletService {
   /**
    * <p>Request that the device signs the given transaction (limited number of inputs/outputs).</p>
    *
-   * @param transaction The transaction containing all the inputs and outputs
+   * @param transaction             The transaction containing all the inputs and outputs
+   * @param receivingAddressPathMap The paths to the receiving addresses for this transaction keyed by input index
+   * @param changeAddressPathMap    The paths to the change address for this transaction keyed by Address
    */
-  public void simpleSignTx(Transaction transaction) {
+  public void simpleSignTx(
+    Transaction transaction,
+    Map<Integer, ImmutableList<ChildNumber>> receivingAddressPathMap,
+    Map<Address, ImmutableList<ChildNumber>> changeAddressPathMap) {
 
-    // Set the FSM context
-    context.beginSignTxUseCase(transaction);
+    throw new UnsupportedOperationException("Not yet supported. Use signTx instead.");
 
   }
 
   /**
    * <p>Request that the device signs the given transaction (unlimited number of inputs/outputs).</p>
    *
-   * @param transaction The transaction containing all the inputs and outputs
+   * @param transaction             The transaction containing all the inputs and outputs
+   * @param receivingAddressPathMap The paths to the receiving addresses for this transaction keyed by input index
+   * @param changeAddressPathMap    The paths to the change address for this transaction keyed by Address
    */
-  public void signTx(Transaction transaction) {
+  public void signTx(Transaction transaction, Map<Integer, ImmutableList<ChildNumber>> receivingAddressPathMap, Map<Address, ImmutableList<ChildNumber>> changeAddressPathMap) {
 
     // Set the FSM context
-    context.beginSignTxUseCase(transaction);
+    context.beginSignTxUseCase(transaction, receivingAddressPathMap, changeAddressPathMap);
 
   }
 

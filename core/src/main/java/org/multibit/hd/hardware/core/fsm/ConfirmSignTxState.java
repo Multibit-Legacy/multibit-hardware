@@ -1,6 +1,6 @@
 package org.multibit.hd.hardware.core.fsm;
 
-import com.google.bitcoin.core.Transaction;
+import org.bitcoinj.core.Transaction;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.events.HardwareWalletEventType;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
@@ -85,7 +85,7 @@ public class ConfirmSignTxState extends AbstractHardwareWalletState {
           case TX_OUTPUT:
             break;
         }
-        client.txAck(txRequest, transaction);
+        client.txAck(txRequest, transaction, context.getReceivingAddressPathMap(), context.getChangeAddressPathMap());
         break;
       case BUTTON_REQUEST:
         // Device is requesting a button press

@@ -35,15 +35,18 @@ public class ConfirmWipeState extends AbstractHardwareWalletState {
         // Device has successfully wiped
         switch (context.getCurrentUseCase()) {
           case CREATE_WALLET:
+            // Proceed to wallet reset (internal seed)
             context.setToConfirmResetState();
             break;
           case LOAD_WALLET:
+            // Proceed to wallet load (provided seed)
             context.setToConfirmLoadState();
             break;
           default:
             // No wallet creation required so we're done
             HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_OPERATION_SUCCEEDED, event.getMessage().get());
-            context.resetToInitialised();
+            // Ensure the Features are updated
+            context.resetToConnected();
             break;
         }
         break;

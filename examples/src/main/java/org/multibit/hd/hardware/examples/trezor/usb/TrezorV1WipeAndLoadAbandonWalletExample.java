@@ -6,9 +6,10 @@ import com.google.common.util.concurrent.Uninterruptibles;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.HardwareWalletService;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvent;
+import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.wallets.HardwareWallets;
 import org.multibit.hd.hardware.trezor.clients.TrezorHardwareWalletClient;
-import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1UsbHardwareWallet;
+import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1HidHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,13 +23,15 @@ import java.util.concurrent.TimeUnit;
  *
  * <h3>Only perform this example on a Trezor that you are using for test and development!</h3>
  * <h3>Loading with a known seed phrase is not secure</h3>
+ * <h3>The seed phrase for this example is taken from the test vectors at https://github.com/trezor/python-mnemonic/blob/master/vectors.json</h3>
+ *
  *
  * @since 0.0.1
  *  
  */
-public class TrezorV1WipeAndLoadWalletExample {
+public class TrezorV1WipeAndLoadAbandonWalletExample {
 
-  private static final Logger log = LoggerFactory.getLogger(TrezorV1WipeAndLoadWalletExample.class);
+  private static final Logger log = LoggerFactory.getLogger(TrezorV1WipeAndLoadAbandonWalletExample.class);
 
   private HardwareWalletService hardwareWalletService;
 
@@ -42,7 +45,7 @@ public class TrezorV1WipeAndLoadWalletExample {
   public static void main(String[] args) throws Exception {
 
     // All the work is done in the class
-    TrezorV1WipeAndLoadWalletExample example = new TrezorV1WipeAndLoadWalletExample();
+    TrezorV1WipeAndLoadAbandonWalletExample example = new TrezorV1WipeAndLoadAbandonWalletExample();
 
     example.executeExample();
 
@@ -54,10 +57,10 @@ public class TrezorV1WipeAndLoadWalletExample {
   public void executeExample() {
 
     // Use factory to statically bind the specific hardware wallet
-    TrezorV1UsbHardwareWallet wallet = HardwareWallets.newUsbInstance(
-      TrezorV1UsbHardwareWallet.class,
-      Optional.<Short>absent(),
-      Optional.<Short>absent(),
+    TrezorV1HidHardwareWallet wallet = HardwareWallets.newUsbInstance(
+            TrezorV1HidHardwareWallet.class,
+      Optional.<Integer>absent(),
+      Optional.<Integer>absent(),
       Optional.<String>absent()
     );
 
@@ -68,7 +71,7 @@ public class TrezorV1WipeAndLoadWalletExample {
     hardwareWalletService = new HardwareWalletService(client);
 
     // Register for the high level hardware wallet events
-    HardwareWalletService.hardwareWalletEventBus.register(this);
+    HardwareWalletEvents.subscribe(this);
 
     hardwareWalletService.start();
 
@@ -99,14 +102,15 @@ public class TrezorV1WipeAndLoadWalletExample {
       case SHOW_DEVICE_READY:
 
         // Set the seed phrase
-        String seedPhrase ="beyond neighbor scratch swirl embarrass doll cause also stick softly physical nice";
+        String seedPhrase ="abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+        //String seedPhrase ="job during sweet dash wash session meat better ecology walk blue amused";
 
         // Force loading of the wallet (wipe then load)
         // Specify PIN
         // This method reveals the seed phrase so is not secure
         hardwareWalletService.loadWallet(
           "english",
-          "Insecure",
+          "Abandon",
           seedPhrase,
           "1"
         );

@@ -2,8 +2,6 @@ package org.multibit.hd.hardware.core.fsm;
 
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.events.MessageEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <p>State to provide the following to hardware wallet clients:</p>
@@ -21,8 +19,6 @@ import org.slf4j.LoggerFactory;
  */
 public class AttachedState extends AbstractHardwareWalletState {
 
-  private static final Logger log = LoggerFactory.getLogger(AttachedState.class);
-
   @Override
   public void await(HardwareWalletContext context) {
 
@@ -34,12 +30,7 @@ public class AttachedState extends AbstractHardwareWalletState {
   @Override
   protected void internalTransition(HardwareWalletClient client, HardwareWalletContext context, MessageEvent event) {
 
-    switch (event.getEventType()) {
-      // TODO Implement
-      default:
-        log.warn("Unexpected message event '{}'", event.getEventType().name());
-        context.resetToConnected();
-    }
+   context.resetToConnected();
 
   }
 }

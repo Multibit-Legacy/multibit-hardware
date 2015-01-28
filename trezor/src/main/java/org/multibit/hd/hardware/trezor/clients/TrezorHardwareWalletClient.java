@@ -10,8 +10,6 @@ import org.multibit.hd.hardware.trezor.wallets.AbstractTrezorHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,7 +18,8 @@ import java.util.concurrent.TimeUnit;
  * <li>Provides high level accessor methods based on common use cases</li>
  * </ul>
  * <p>This is intended as a high level API to the Trezor device. Developers who need more control over the
- * responses and events are advised to study the Examples project.</p>
+ * responses and events are advised to study the Examples project and use the <code>TrezorHardwareWallet</code>
+ * implementations.</p>
  *
  * @since 0.0.1
  *  
@@ -32,13 +31,13 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
   private final AbstractTrezorHardwareWallet trezor;
   private boolean isTrezorValid = false;
 
-  private ExecutorService trezorEventExecutorService = Executors.newSingleThreadExecutor();
-  private boolean isSessionIdValid = true;
-
   /**
-   * @param trezor The Trezor device
+   * @param trezor The Trezor hardware wallet
    */
   public TrezorHardwareWalletClient(AbstractTrezorHardwareWallet trezor) {
+
+    Preconditions.checkNotNull(trezor, "'trezor' must be present");
+
     this.trezor = trezor;
   }
 
@@ -54,15 +53,29 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
 
     // Must be OK to be here
     log.debug("Environment OK");
+
     return true;
   }
 
   @Override
-  public void detach() {
+  public void softDetach() {
 
-    log.debug("Detaching...");
+    log.debug("Performing client soft detach...");
 
-    trezor.detach();
+    isTrezorValid = false;
+
+    trezor.softDetach();
+  }
+
+  @Override
+  public void hardDetach() {
+
+    log.debug("Performing client hard detach...");
+
+    isTrezorValid = false;
+
+    // A hard detach includes a disconnect
+    trezor.hardDetach();
 
   }
 
@@ -82,10 +95,9 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
 
   @Override
   public void disconnect() {
-    isSessionIdValid = false;
-    isTrezorValid = false;
-    trezor.disconnect();
-    trezorEventExecutorService.shutdownNow();
+
+    // A disconnect has the same behaviour as a soft detach
+    softDetach();
   }
 
   @Override
@@ -99,18 +111,11 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
   protected Optional<MessageEvent> sendMessage(Message message, int duration, TimeUnit timeUnit) {
 
     Preconditions.checkState(isTrezorValid, "Trezor device is not valid. Try connecting or start a new session after a disconnect.");
-    Preconditions.checkState(isSessionIdValid, "An old session ID must be discarded. Create a new instance.");
 
     // Write the message
     trezor.writeMessage(message);
 
-    // Wait for a response
-    MessageEvent messageEvent = trezor.readMessage();
-
-    // Fire the event
-    MessageEvents.fireMessageEvent(messageEvent);
-
-    return Optional.of(messageEvent);
+    return Optional.absent();
 
   }
 
