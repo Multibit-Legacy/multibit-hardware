@@ -2,7 +2,9 @@ Status: [![Build Status](https://travis-ci.org/bitcoin-solutions/multibit-hardwa
 
 ### Project status
 
-Late-Beta: Expect minimal API changes. Suitable for production and developers should start integrating.
+Release 0.1.0: Suitable for production.
+
+See `develop` branch for ongoing work.
 
 ### MultiBit Hardware
 
