@@ -170,6 +170,9 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
     log.debug("Shutdown HID events");
     hidServices.removeUsbServicesListener(this);
 
+    log.debug("Release resources");
+    hidServices.stop();
+
     log.info("Hard detach complete. HID events are stopped.");
 
     // Let everyone know
@@ -267,11 +270,6 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
       (byte) 0x00
     );
 
-    // Check the packet is correct (64 bytes + report ID)
-    if (bytesSent != buffer.length + 1) {
-      log.warn("Invalid packet size sent. Expected: " + buffer.length + " Actual: " + bytesSent);
-    }
-
     log.debug("Wrote {} bytes to USB pipe.", bytesSent);
 
     return bytesSent;
@@ -282,6 +280,13 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
   protected synchronized Optional<MessageEvent> readFromDevice(int duration, TimeUnit timeUnit) {
 
     log.debug("Reading from hardware device");
+
+    if (!locatedDevice.isPresent()) {
+      log.warn("Attempting to read from a device that is not present");
+      // Avoid excessive failure logging
+      Uninterruptibles.sleepUninterruptibly(1, TimeUnit.SECONDS);
+      return Optional.absent();
+    }
 
     ByteBuffer messageBuffer = ByteBuffer.allocate(32768);
 
@@ -375,7 +380,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
   @Override
   public void hidDeviceAttached(HidServicesEvent event) {
 
-    HidDeviceInfo attachedDevice = event.getHidDeviceInfo();
+    HidDevice attachedDevice = event.getHidDevice();
 
     int attachedVendorId = (int) attachedDevice.getVendorId();
     int attachedProductId = (int) attachedDevice.getProductId();
@@ -392,7 +397,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
   @Override
   public void hidDeviceDetached(HidServicesEvent event) {
 
-    HidDeviceInfo attachedDevice = event.getHidDeviceInfo();
+    HidDevice attachedDevice = event.getHidDevice();
 
     int detachedVendorId = (int) attachedDevice.getVendorId();
     int detachedProductId = (int) attachedDevice.getProductId();
