@@ -1,8 +1,9 @@
 package org.multibit.hd.hardware.core.fsm;
 
 import org.multibit.hd.hardware.core.HardwareWalletClient;
+import org.multibit.hd.hardware.core.events.HardwareWalletEventType;
+import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.events.MessageEvent;
-import org.multibit.hd.hardware.core.wallets.AbstractHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +20,10 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractHardwareWalletState implements HardwareWalletState {
 
-  private static final Logger log = LoggerFactory.getLogger(AbstractHardwareWallet.class);
+  /**
+   * Non-static to allow for custom message from subclasses
+   */
+  private final Logger log = LoggerFactory.getLogger(this.getClass());
 
   @Override
   public void await(HardwareWalletContext context) {
@@ -39,8 +43,8 @@ public abstract class AbstractHardwareWalletState implements HardwareWalletState
         context.resetToDetached();
         return;
       case DEVICE_CONNECTED:
-      context.resetToConnected();
-      return;
+        context.resetToConnected();
+        return;
       case DEVICE_DISCONNECTED:
         context.resetToDisconnected();
         return;
@@ -63,7 +67,20 @@ public abstract class AbstractHardwareWalletState implements HardwareWalletState
    * @param client  The hardware wallet client for sending messages
    * @param context The current context providing parameters for decisions
    * @param event   The event driving the transition
-   *
    */
   protected abstract void internalTransition(HardwareWalletClient client, HardwareWalletContext context, MessageEvent event);
+
+  /**
+   * <p>Provide standard handling for an unexpected message so the downstream consumer can react appropriately</p>
+   *
+   * @param context The current context providing parameters for decisions
+   * @param event   The event driving the transition
+   */
+  protected void handleUnexpectedMessageEvent(HardwareWalletContext context, MessageEvent event) {
+
+    log.warn("Unexpected message event '{}'", event.getEventType().name());
+    HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_OPERATION_FAILED, event.getMessage().get());
+    context.resetToConnected();
+
+  }
 }

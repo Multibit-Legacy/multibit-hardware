@@ -1,17 +1,16 @@
 package org.multibit.hd.hardware.examples.trezor.usb;
 
 import com.google.common.base.Charsets;
-import org.bitcoinj.core.Utils;
-import org.bitcoinj.wallet.KeyChain;
 import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.Uninterruptibles;
+import org.bitcoinj.core.Utils;
+import org.bitcoinj.wallet.KeyChain;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.HardwareWalletService;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvent;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.messages.PinMatrixRequest;
-import org.multibit.hd.hardware.core.messages.Success;
 import org.multibit.hd.hardware.core.wallets.HardwareWallets;
 import org.multibit.hd.hardware.trezor.clients.TrezorHardwareWalletClient;
 import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1HidHardwareWallet;
@@ -50,6 +49,10 @@ public class TrezorV1CipherKeyExample {
 
     example.executeExample();
 
+    // Simulate the main thread continuing with other unrelated work
+    // We don't terminate main since we're using safe executors
+    Uninterruptibles.sleepUninterruptibly(5, TimeUnit.MINUTES);
+
   }
 
   /**
@@ -75,10 +78,6 @@ public class TrezorV1CipherKeyExample {
     HardwareWalletEvents.subscribe(this);
 
     hardwareWalletService.start();
-
-    // Simulate the main thread continuing with other unrelated work
-    // We don't terminate main since we're using safe executors
-    Uninterruptibles.sleepUninterruptibly(1, TimeUnit.HOURS);
 
   }
 
@@ -144,14 +143,12 @@ public class TrezorV1CipherKeyExample {
       case SHOW_OPERATION_SUCCEEDED:
         // Check that the service has the entropy
         byte[] payload = hardwareWalletService.getContext().getEntropy().get();
-        String message = ((Success) event.getMessage().get()).getMessage();
 
-        // Requires the MultiBit Dev wallet to resolve as deterministic
+        // Requires the MultiBit "Abandon" wallet to resolve as deterministic
         log.info(
-          "Message:'{}'\nPayload: {} (Deterministic: {})",
-          message,
+          "Payload: {} (Deterministic on 'Abandon': {})",
           Utils.HEX.encode(payload),
-          Utils.HEX.encode(payload).equals("be3c43189407284bb3fd1ac0040db1e0")
+          Utils.HEX.encode(payload).equals("ec406a3c796099050400f65ab311363e")
         );
         // Treat as end of example
         System.exit(0);
