@@ -4,8 +4,6 @@ import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.events.HardwareWalletEventType;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.events.MessageEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <p>State to provide the following to hardware wallet clients:</p>
@@ -21,8 +19,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ConfirmSignMessageState extends AbstractHardwareWalletState {
 
-  private static final Logger log = LoggerFactory.getLogger(ConfirmSignMessageState.class);
-
   @Override
   protected void internalTransition(HardwareWalletClient client, HardwareWalletContext context, MessageEvent event) {
 
@@ -31,6 +27,11 @@ public class ConfirmSignMessageState extends AbstractHardwareWalletState {
         // Device is asking for a PIN matrix to be displayed (user must read the screen carefully)
         HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_PIN_ENTRY, event.getMessage().get());
         // Further state transitions will occur after the user has provided the PIN via the service
+        break;
+      case PASSPHRASE_REQUEST:
+        // Device is asking for a passphrase screen to be displayed
+        HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_PASSPHRASE_ENTRY);
+        // Further state transitions will occur after the user has provided the passphrase via the service
         break;
       case BUTTON_REQUEST:
         // Device is requesting a button press

@@ -229,7 +229,7 @@ public interface HardwareWalletClient extends Connectable {
    *
    * @return The response event if implementation is blocking. Absent if non-blocking or device failure.
    */
-  public Optional<MessageEvent> signTx(Transaction tx);
+  Optional<MessageEvent> signTx(Transaction tx);
 
   /**
    * <p>Send the SIMPLE_SIGN_TX message to the device. This will use the supplied transaction object and attempt
@@ -246,7 +246,7 @@ public interface HardwareWalletClient extends Connectable {
    *
    * @return The response event if implementation is blocking. Absent if non-blocking or device failure.
    */
-  public Optional<MessageEvent> simpleSignTx(Transaction tx);
+  Optional<MessageEvent> simpleSignTx(Transaction tx);
 
   /**
    * <p>Send the TX_ACK message to the device. This contains a description of an input or output depending
@@ -279,6 +279,20 @@ public interface HardwareWalletClient extends Connectable {
    * @return The response event if implementation is blocking. Absent if non-blocking or device failure.
    */
   Optional<MessageEvent> pinMatrixAck(String pin);
+
+  /**
+   * <p>Send the PASSPHRASE_ACK message to the device in response to a PASSPHRASE_REQUEST.</p>
+   * <p>Implementers are expected to show a passphrase dialog on the UI.</p>
+   * <p>Expected response events are:</p>
+   * <ul>
+   * <li>FAILURE if the operation was unsuccessful</li>
+   * </ul>
+   *
+   * @param passphrase The passphrase as entered by the user (not obfuscated)
+   *
+   * @return The response event if implementation is blocking. Absent if non-blocking or device failure.
+   */
+  Optional<MessageEvent> passphraseAck(String passphrase);
 
   /**
    * <p>Send the CANCEL message to the device in response to a BUTTON_REQUEST, PIN_MATRIX_REQUEST or PASSPHRASE_REQUEST. </p>
@@ -330,6 +344,7 @@ public interface HardwareWalletClient extends Connectable {
    * <p>Expected response events are:</p>
    * <ul>
    * <li>ADDRESS (with data) if the operation succeeded</li>
+   * <li>PIN_MATRIX_REQUEST if the PIN is needed</li>
    * <li>PASSPHRASE_REQUEST if the passphrase is needed</li>
    * <li>FAILURE if the operation was unsuccessful</li>
    * </ul>
@@ -341,7 +356,7 @@ public interface HardwareWalletClient extends Connectable {
    *
    * @return The response event if implementation is blocking. Absent if non-blocking or device failure.
    */
-  public Optional<MessageEvent> getAddress(int account, KeyChain.KeyPurpose keyPurpose, int index, boolean showDisplay);
+  Optional<MessageEvent> getAddress(int account, KeyChain.KeyPurpose keyPurpose, int index, boolean showDisplay);
 
   /**
    * <p>Send the GET_PUBLIC_KEY message to the device. The device will respond by providing a public key calculated
@@ -350,6 +365,7 @@ public interface HardwareWalletClient extends Connectable {
    * <p>Expected response events are:</p>
    * <ul>
    * <li>PUBLIC_KEY if the operation succeeded (may take up to 10 seconds)</li>
+   * <li>PIN_MATRIX_REQUEST if the PIN is needed</li>
    * <li>FAILURE if the operation was unsuccessful</li>
    * </ul>
    *
@@ -364,10 +380,11 @@ public interface HardwareWalletClient extends Connectable {
   /**
    * <p>Send the GET_PUBLIC_KEY message to the device based on the given list of child numbers. The device will respond by
    * providing an extended public key (xpub) calculated based on the <a href="https://en.bitcoin.it/wiki/BIP_0044">BIP-44</a>
-   * deterministic wallet approach from the master node. If the </p>
+   * deterministic wallet approach from the master node. </p>
    * <p>Expected response events are:</p>
    * <ul>
    * <li>PUBLIC_KEY if the operation succeeded (may take up to 10 seconds)</li>
+   * <li>PIN_MATRIX_REQUEST if the PIN is needed</li>
    * <li>FAILURE if the operation was unsuccessful</li>
    * </ul>
    *
