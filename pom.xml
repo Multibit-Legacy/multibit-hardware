@@ -5,13 +5,12 @@
 
   <groupId>org.multibit.hd.hardware</groupId>
   <artifactId>parent</artifactId>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
 
   <packaging>pom</packaging>
 
   <name>MultiBit HD Hardware</name>
-  <description>MBHD Hardware provides a common API for hardware wallets that wish to interface with MultiBit HD
-  </description>
+  <description>MBHD Hardware provides a common API for hardware wallets that wish to interface with MultiBit HD</description>
 
   <properties>
     <!-- Source encoding -->
