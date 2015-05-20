@@ -296,7 +296,7 @@ public class TrezorV1WatchingWalletExample {
 
       } else {
 
-        DeterministicKey rootNodePubOnly = hierarchy.getRootKey().getPubOnly();
+        DeterministicKey rootNodePubOnly = hierarchy.getRootKey();
 
         // Get the root public key and share the reference with the wallet since it will update
         // the known key search space which will be handy later
