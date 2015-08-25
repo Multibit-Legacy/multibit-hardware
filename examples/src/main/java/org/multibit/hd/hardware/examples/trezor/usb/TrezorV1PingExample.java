@@ -3,6 +3,7 @@ package org.multibit.hd.hardware.examples.trezor.usb;
 import com.google.common.base.Optional;
 import com.google.common.eventbus.Subscribe;
 import com.google.common.util.concurrent.Uninterruptibles;
+import org.bitcoinj.core.AddressFormatException;
 import org.multibit.hd.hardware.core.HardwareWalletClient;
 import org.multibit.hd.hardware.core.HardwareWalletService;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvent;
@@ -13,25 +14,20 @@ import org.multibit.hd.hardware.trezor.wallets.v1.TrezorV1HidHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 /**
- * <p>Wipe the device to factory defaults and load with known seed phrase</p>
+ * <p>Ping device</p>
  * <p>Requires Trezor V1 production device plugged into a USB HID interface.</p>
- * <p>This example demonstrates the message sequence to wipe a Trezor device back to its fresh out of the box
- * state and then set it up with a known seed phrase.</p>
- *
- * <h3>Only perform this example on a Trezor that you are using for test and development!</h3>
- * <h3>Loading with a known seed phrase is not secure</h3>
- * <h3>The seed phrase for this example is taken from the test vectors at https://github.com/trezor/python-mnemonic/blob/master/vectors.json</h3>
- *
+ * <p>This example demonstrates the initial verification of recognising insertion and removal of a Trezor.</p>
  *
  * @since 0.0.1
  *  
  */
-public class TrezorV1WipeAndLoadAbandonWalletExample {
+public class TrezorV1PingExample {
 
-  private static final Logger log = LoggerFactory.getLogger(TrezorV1WipeAndLoadAbandonWalletExample.class);
+  private static final Logger log = LoggerFactory.getLogger(TrezorV1PingExample.class);
 
   private HardwareWalletService hardwareWalletService;
 
@@ -45,7 +41,10 @@ public class TrezorV1WipeAndLoadAbandonWalletExample {
   public static void main(String[] args) throws Exception {
 
     // All the work is done in the class
-    TrezorV1WipeAndLoadAbandonWalletExample example = new TrezorV1WipeAndLoadAbandonWalletExample();
+    TrezorV1PingExample example = new TrezorV1PingExample();
+
+    // Subscribe to hardware wallet events
+    HardwareWalletEvents.subscribe(example);
 
     example.executeExample();
 
@@ -56,13 +55,13 @@ public class TrezorV1WipeAndLoadAbandonWalletExample {
   }
 
   /**
-   * Execute the example
+   * @throws IOException If something goes wrong
    */
-  public void executeExample() {
+  public void executeExample() throws IOException, InterruptedException, AddressFormatException {
 
     // Use factory to statically bind the specific hardware wallet
     TrezorV1HidHardwareWallet wallet = HardwareWallets.newUsbInstance(
-            TrezorV1HidHardwareWallet.class,
+      TrezorV1HidHardwareWallet.class,
       Optional.<Integer>absent(),
       Optional.<Integer>absent(),
       Optional.<String>absent()
@@ -77,6 +76,7 @@ public class TrezorV1WipeAndLoadAbandonWalletExample {
     // Register for the high level hardware wallet events
     HardwareWalletEvents.subscribe(this);
 
+    // Start the service
     hardwareWalletService.start();
 
   }
@@ -89,7 +89,7 @@ public class TrezorV1WipeAndLoadAbandonWalletExample {
   @Subscribe
   public void onHardwareWalletEvent(HardwareWalletEvent event) {
 
-    log.debug("Received hardware event: '{}'.{}", event.getEventType().name(), event.getMessage());
+    log.debug("Received hardware event: '{}'", event.getEventType().name());
 
     switch (event.getEventType()) {
       case SHOW_DEVICE_FAILED:
@@ -100,34 +100,17 @@ public class TrezorV1WipeAndLoadAbandonWalletExample {
         // Can simply wait for another device to be connected again
         break;
       case SHOW_DEVICE_READY:
-
-        // Set the seed phrase
-        String seedPhrase ="abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
-
-        // Force loading of the wallet (wipe then load)
-        // Specify PIN
-        // This method reveals the seed phrase so is not secure
-        hardwareWalletService.loadWallet(
-          "english",
-          "Abandon",
-          seedPhrase,
-          "1"
-        );
+        // Get some information about the device
+        hardwareWalletService.requestPing();
         break;
-
       case SHOW_OPERATION_SUCCEEDED:
+        log.info("Ping successful");
         // Treat as end of example
         System.exit(0);
-        break;
-      case SHOW_OPERATION_FAILED:
-        // Treat as end of example
-        System.exit(-1);
         break;
       default:
         // Ignore
     }
 
-
   }
-
 }

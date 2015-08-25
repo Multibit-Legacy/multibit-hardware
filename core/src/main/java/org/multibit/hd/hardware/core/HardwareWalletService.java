@@ -7,7 +7,7 @@ import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Transaction;
 import org.bitcoinj.crypto.ChildNumber;
 import org.bitcoinj.wallet.KeyChain;
-import org.multibit.hd.hardware.core.concurrent.SafeExecutors;
+import org.multibit.commons.concurrent.SafeExecutors;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.events.MessageEvents;
 import org.multibit.hd.hardware.core.fsm.CreateWalletSpecification;
@@ -167,6 +167,18 @@ public class HardwareWalletService {
     }
 
     return context.getFeatures().get().isInitialized();
+
+  }
+
+  /**
+   * <p>Ping the device</p>
+   *
+   * <p>This will trigger a SHOW_OPERATION_SUCCEEDED</p>
+   */
+  public void requestPing() {
+
+    // Let the state changes occur as a result of the internal messages
+    context.getClient().ping();
 
   }
 
