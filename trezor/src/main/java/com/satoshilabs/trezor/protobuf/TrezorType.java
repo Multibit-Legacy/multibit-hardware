@@ -10691,6 +10691,1466 @@ public final class TrezorType {
     // @@protoc_insertion_point(class_scope:TxRequestSerializedType)
   }
 
+  public interface IdentityTypeOrBuilder
+      extends com.google.protobuf.MessageOrBuilder {
+
+    // optional string proto = 1;
+    /**
+     * <code>optional string proto = 1;</code>
+     *
+     * <pre>
+     * proto part of URI
+     * </pre>
+     */
+    boolean hasProto();
+    /**
+     * <code>optional string proto = 1;</code>
+     *
+     * <pre>
+     * proto part of URI
+     * </pre>
+     */
+    java.lang.String getProto();
+    /**
+     * <code>optional string proto = 1;</code>
+     *
+     * <pre>
+     * proto part of URI
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getProtoBytes();
+
+    // optional string user = 2;
+    /**
+     * <code>optional string user = 2;</code>
+     *
+     * <pre>
+     * user part of URI
+     * </pre>
+     */
+    boolean hasUser();
+    /**
+     * <code>optional string user = 2;</code>
+     *
+     * <pre>
+     * user part of URI
+     * </pre>
+     */
+    java.lang.String getUser();
+    /**
+     * <code>optional string user = 2;</code>
+     *
+     * <pre>
+     * user part of URI
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getUserBytes();
+
+    // optional string host = 3;
+    /**
+     * <code>optional string host = 3;</code>
+     *
+     * <pre>
+     * host part of URI
+     * </pre>
+     */
+    boolean hasHost();
+    /**
+     * <code>optional string host = 3;</code>
+     *
+     * <pre>
+     * host part of URI
+     * </pre>
+     */
+    java.lang.String getHost();
+    /**
+     * <code>optional string host = 3;</code>
+     *
+     * <pre>
+     * host part of URI
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getHostBytes();
+
+    // optional string port = 4;
+    /**
+     * <code>optional string port = 4;</code>
+     *
+     * <pre>
+     * port part of URI
+     * </pre>
+     */
+    boolean hasPort();
+    /**
+     * <code>optional string port = 4;</code>
+     *
+     * <pre>
+     * port part of URI
+     * </pre>
+     */
+    java.lang.String getPort();
+    /**
+     * <code>optional string port = 4;</code>
+     *
+     * <pre>
+     * port part of URI
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getPortBytes();
+
+    // optional string path = 5;
+    /**
+     * <code>optional string path = 5;</code>
+     *
+     * <pre>
+     * path part of URI
+     * </pre>
+     */
+    boolean hasPath();
+    /**
+     * <code>optional string path = 5;</code>
+     *
+     * <pre>
+     * path part of URI
+     * </pre>
+     */
+    java.lang.String getPath();
+    /**
+     * <code>optional string path = 5;</code>
+     *
+     * <pre>
+     * path part of URI
+     * </pre>
+     */
+    com.google.protobuf.ByteString
+        getPathBytes();
+
+    // optional uint32 index = 6 [default = 0];
+    /**
+     * <code>optional uint32 index = 6 [default = 0];</code>
+     *
+     * <pre>
+     * identity index
+     * </pre>
+     */
+    boolean hasIndex();
+    /**
+     * <code>optional uint32 index = 6 [default = 0];</code>
+     *
+     * <pre>
+     * identity index
+     * </pre>
+     */
+    int getIndex();
+  }
+  /**
+   * Protobuf type {@code IdentityType}
+   *
+   * <pre>
+   **
+   * Structure representing identity data
+   * @used_in IdentityType
+   * </pre>
+   */
+  public static final class IdentityType extends
+      com.google.protobuf.GeneratedMessage
+      implements IdentityTypeOrBuilder {
+    // Use IdentityType.newBuilder() to construct.
+    private IdentityType(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      super(builder);
+      this.unknownFields = builder.getUnknownFields();
+    }
+    private IdentityType(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+
+    private static final IdentityType defaultInstance;
+    public static IdentityType getDefaultInstance() {
+      return defaultInstance;
+    }
+
+    public IdentityType getDefaultInstanceForType() {
+      return defaultInstance;
+    }
+
+    private final com.google.protobuf.UnknownFieldSet unknownFields;
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+        getUnknownFields() {
+      return this.unknownFields;
+    }
+    private IdentityType(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      initFields();
+      int mutable_bitField0_ = 0;
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            default: {
+              if (!parseUnknownField(input, unknownFields,
+                                     extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+            case 10: {
+              bitField0_ |= 0x00000001;
+              proto_ = input.readBytes();
+              break;
+            }
+            case 18: {
+              bitField0_ |= 0x00000002;
+              user_ = input.readBytes();
+              break;
+            }
+            case 26: {
+              bitField0_ |= 0x00000004;
+              host_ = input.readBytes();
+              break;
+            }
+            case 34: {
+              bitField0_ |= 0x00000008;
+              port_ = input.readBytes();
+              break;
+            }
+            case 42: {
+              bitField0_ |= 0x00000010;
+              path_ = input.readBytes();
+              break;
+            }
+            case 48: {
+              bitField0_ |= 0x00000020;
+              index_ = input.readUInt32();
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e.getMessage()).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return com.satoshilabs.trezor.protobuf.TrezorType.internal_static_IdentityType_descriptor;
+    }
+
+    protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return com.satoshilabs.trezor.protobuf.TrezorType.internal_static_IdentityType_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              com.satoshilabs.trezor.protobuf.TrezorType.IdentityType.class, com.satoshilabs.trezor.protobuf.TrezorType.IdentityType.Builder.class);
+    }
+
+    public static com.google.protobuf.Parser<IdentityType> PARSER =
+        new com.google.protobuf.AbstractParser<IdentityType>() {
+      public IdentityType parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new IdentityType(input, extensionRegistry);
+      }
+    };
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<IdentityType> getParserForType() {
+      return PARSER;
+    }
+
+    private int bitField0_;
+    // optional string proto = 1;
+    public static final int PROTO_FIELD_NUMBER = 1;
+    private java.lang.Object proto_;
+    /**
+     * <code>optional string proto = 1;</code>
+     *
+     * <pre>
+     * proto part of URI
+     * </pre>
+     */
+    public boolean hasProto() {
+      return ((bitField0_ & 0x00000001) == 0x00000001);
+    }
+    /**
+     * <code>optional string proto = 1;</code>
+     *
+     * <pre>
+     * proto part of URI
+     * </pre>
+     */
+    public java.lang.String getProto() {
+      java.lang.Object ref = proto_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          proto_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string proto = 1;</code>
+     *
+     * <pre>
+     * proto part of URI
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getProtoBytes() {
+      java.lang.Object ref = proto_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        proto_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional string user = 2;
+    public static final int USER_FIELD_NUMBER = 2;
+    private java.lang.Object user_;
+    /**
+     * <code>optional string user = 2;</code>
+     *
+     * <pre>
+     * user part of URI
+     * </pre>
+     */
+    public boolean hasUser() {
+      return ((bitField0_ & 0x00000002) == 0x00000002);
+    }
+    /**
+     * <code>optional string user = 2;</code>
+     *
+     * <pre>
+     * user part of URI
+     * </pre>
+     */
+    public java.lang.String getUser() {
+      java.lang.Object ref = user_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          user_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string user = 2;</code>
+     *
+     * <pre>
+     * user part of URI
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getUserBytes() {
+      java.lang.Object ref = user_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        user_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional string host = 3;
+    public static final int HOST_FIELD_NUMBER = 3;
+    private java.lang.Object host_;
+    /**
+     * <code>optional string host = 3;</code>
+     *
+     * <pre>
+     * host part of URI
+     * </pre>
+     */
+    public boolean hasHost() {
+      return ((bitField0_ & 0x00000004) == 0x00000004);
+    }
+    /**
+     * <code>optional string host = 3;</code>
+     *
+     * <pre>
+     * host part of URI
+     * </pre>
+     */
+    public java.lang.String getHost() {
+      java.lang.Object ref = host_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          host_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string host = 3;</code>
+     *
+     * <pre>
+     * host part of URI
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getHostBytes() {
+      java.lang.Object ref = host_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        host_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional string port = 4;
+    public static final int PORT_FIELD_NUMBER = 4;
+    private java.lang.Object port_;
+    /**
+     * <code>optional string port = 4;</code>
+     *
+     * <pre>
+     * port part of URI
+     * </pre>
+     */
+    public boolean hasPort() {
+      return ((bitField0_ & 0x00000008) == 0x00000008);
+    }
+    /**
+     * <code>optional string port = 4;</code>
+     *
+     * <pre>
+     * port part of URI
+     * </pre>
+     */
+    public java.lang.String getPort() {
+      java.lang.Object ref = port_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          port_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string port = 4;</code>
+     *
+     * <pre>
+     * port part of URI
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getPortBytes() {
+      java.lang.Object ref = port_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        port_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional string path = 5;
+    public static final int PATH_FIELD_NUMBER = 5;
+    private java.lang.Object path_;
+    /**
+     * <code>optional string path = 5;</code>
+     *
+     * <pre>
+     * path part of URI
+     * </pre>
+     */
+    public boolean hasPath() {
+      return ((bitField0_ & 0x00000010) == 0x00000010);
+    }
+    /**
+     * <code>optional string path = 5;</code>
+     *
+     * <pre>
+     * path part of URI
+     * </pre>
+     */
+    public java.lang.String getPath() {
+      java.lang.Object ref = path_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        if (bs.isValidUtf8()) {
+          path_ = s;
+        }
+        return s;
+      }
+    }
+    /**
+     * <code>optional string path = 5;</code>
+     *
+     * <pre>
+     * path part of URI
+     * </pre>
+     */
+    public com.google.protobuf.ByteString
+        getPathBytes() {
+      java.lang.Object ref = path_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        path_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    // optional uint32 index = 6 [default = 0];
+    public static final int INDEX_FIELD_NUMBER = 6;
+    private int index_;
+    /**
+     * <code>optional uint32 index = 6 [default = 0];</code>
+     *
+     * <pre>
+     * identity index
+     * </pre>
+     */
+    public boolean hasIndex() {
+      return ((bitField0_ & 0x00000020) == 0x00000020);
+    }
+    /**
+     * <code>optional uint32 index = 6 [default = 0];</code>
+     *
+     * <pre>
+     * identity index
+     * </pre>
+     */
+    public int getIndex() {
+      return index_;
+    }
+
+    private void initFields() {
+      proto_ = "";
+      user_ = "";
+      host_ = "";
+      port_ = "";
+      path_ = "";
+      index_ = 0;
+    }
+    private byte memoizedIsInitialized = -1;
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized != -1) return isInitialized == 1;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      getSerializedSize();
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        output.writeBytes(1, getProtoBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        output.writeBytes(2, getUserBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        output.writeBytes(3, getHostBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        output.writeBytes(4, getPortBytes());
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        output.writeBytes(5, getPathBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        output.writeUInt32(6, index_);
+      }
+      getUnknownFields().writeTo(output);
+    }
+
+    private int memoizedSerializedSize = -1;
+    public int getSerializedSize() {
+      int size = memoizedSerializedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (((bitField0_ & 0x00000001) == 0x00000001)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(1, getProtoBytes());
+      }
+      if (((bitField0_ & 0x00000002) == 0x00000002)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(2, getUserBytes());
+      }
+      if (((bitField0_ & 0x00000004) == 0x00000004)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(3, getHostBytes());
+      }
+      if (((bitField0_ & 0x00000008) == 0x00000008)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(4, getPortBytes());
+      }
+      if (((bitField0_ & 0x00000010) == 0x00000010)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBytesSize(5, getPathBytes());
+      }
+      if (((bitField0_ & 0x00000020) == 0x00000020)) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeUInt32Size(6, index_);
+      }
+      size += getUnknownFields().getSerializedSize();
+      memoizedSerializedSize = size;
+      return size;
+    }
+
+    private static final long serialVersionUID = 0L;
+    @java.lang.Override
+    protected java.lang.Object writeReplace()
+        throws java.io.ObjectStreamException {
+      return super.writeReplace();
+    }
+
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseDelimitedFrom(input, extensionRegistry);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input);
+    }
+    public static com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return PARSER.parseFrom(input, extensionRegistry);
+    }
+
+    public static Builder newBuilder() { return Builder.create(); }
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder(com.satoshilabs.trezor.protobuf.TrezorType.IdentityType prototype) {
+      return newBuilder().mergeFrom(prototype);
+    }
+    public Builder toBuilder() { return newBuilder(this); }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code IdentityType}
+     *
+     * <pre>
+     **
+     * Structure representing identity data
+     * @used_in IdentityType
+     * </pre>
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessage.Builder<Builder>
+       implements com.satoshilabs.trezor.protobuf.TrezorType.IdentityTypeOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return com.satoshilabs.trezor.protobuf.TrezorType.internal_static_IdentityType_descriptor;
+      }
+
+      protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return com.satoshilabs.trezor.protobuf.TrezorType.internal_static_IdentityType_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                com.satoshilabs.trezor.protobuf.TrezorType.IdentityType.class, com.satoshilabs.trezor.protobuf.TrezorType.IdentityType.Builder.class);
+      }
+
+      // Construct using com.satoshilabs.trezor.protobuf.TrezorType.IdentityType.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessage.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessage.alwaysUseFieldBuilders) {
+        }
+      }
+      private static Builder create() {
+        return new Builder();
+      }
+
+      public Builder clear() {
+        super.clear();
+        proto_ = "";
+        bitField0_ = (bitField0_ & ~0x00000001);
+        user_ = "";
+        bitField0_ = (bitField0_ & ~0x00000002);
+        host_ = "";
+        bitField0_ = (bitField0_ & ~0x00000004);
+        port_ = "";
+        bitField0_ = (bitField0_ & ~0x00000008);
+        path_ = "";
+        bitField0_ = (bitField0_ & ~0x00000010);
+        index_ = 0;
+        bitField0_ = (bitField0_ & ~0x00000020);
+        return this;
+      }
+
+      public Builder clone() {
+        return create().mergeFrom(buildPartial());
+      }
+
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return com.satoshilabs.trezor.protobuf.TrezorType.internal_static_IdentityType_descriptor;
+      }
+
+      public com.satoshilabs.trezor.protobuf.TrezorType.IdentityType getDefaultInstanceForType() {
+        return com.satoshilabs.trezor.protobuf.TrezorType.IdentityType.getDefaultInstance();
+      }
+
+      public com.satoshilabs.trezor.protobuf.TrezorType.IdentityType build() {
+        com.satoshilabs.trezor.protobuf.TrezorType.IdentityType result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      public com.satoshilabs.trezor.protobuf.TrezorType.IdentityType buildPartial() {
+        com.satoshilabs.trezor.protobuf.TrezorType.IdentityType result = new com.satoshilabs.trezor.protobuf.TrezorType.IdentityType(this);
+        int from_bitField0_ = bitField0_;
+        int to_bitField0_ = 0;
+        if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
+          to_bitField0_ |= 0x00000001;
+        }
+        result.proto_ = proto_;
+        if (((from_bitField0_ & 0x00000002) == 0x00000002)) {
+          to_bitField0_ |= 0x00000002;
+        }
+        result.user_ = user_;
+        if (((from_bitField0_ & 0x00000004) == 0x00000004)) {
+          to_bitField0_ |= 0x00000004;
+        }
+        result.host_ = host_;
+        if (((from_bitField0_ & 0x00000008) == 0x00000008)) {
+          to_bitField0_ |= 0x00000008;
+        }
+        result.port_ = port_;
+        if (((from_bitField0_ & 0x00000010) == 0x00000010)) {
+          to_bitField0_ |= 0x00000010;
+        }
+        result.path_ = path_;
+        if (((from_bitField0_ & 0x00000020) == 0x00000020)) {
+          to_bitField0_ |= 0x00000020;
+        }
+        result.index_ = index_;
+        result.bitField0_ = to_bitField0_;
+        onBuilt();
+        return result;
+      }
+
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof com.satoshilabs.trezor.protobuf.TrezorType.IdentityType) {
+          return mergeFrom((com.satoshilabs.trezor.protobuf.TrezorType.IdentityType)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(com.satoshilabs.trezor.protobuf.TrezorType.IdentityType other) {
+        if (other == com.satoshilabs.trezor.protobuf.TrezorType.IdentityType.getDefaultInstance()) return this;
+        if (other.hasProto()) {
+          bitField0_ |= 0x00000001;
+          proto_ = other.proto_;
+          onChanged();
+        }
+        if (other.hasUser()) {
+          bitField0_ |= 0x00000002;
+          user_ = other.user_;
+          onChanged();
+        }
+        if (other.hasHost()) {
+          bitField0_ |= 0x00000004;
+          host_ = other.host_;
+          onChanged();
+        }
+        if (other.hasPort()) {
+          bitField0_ |= 0x00000008;
+          port_ = other.port_;
+          onChanged();
+        }
+        if (other.hasPath()) {
+          bitField0_ |= 0x00000010;
+          path_ = other.path_;
+          onChanged();
+        }
+        if (other.hasIndex()) {
+          setIndex(other.getIndex());
+        }
+        this.mergeUnknownFields(other.getUnknownFields());
+        return this;
+      }
+
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        com.satoshilabs.trezor.protobuf.TrezorType.IdentityType parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (com.satoshilabs.trezor.protobuf.TrezorType.IdentityType) e.getUnfinishedMessage();
+          throw e;
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+      private int bitField0_;
+
+      // optional string proto = 1;
+      private java.lang.Object proto_ = "";
+      /**
+       * <code>optional string proto = 1;</code>
+       *
+       * <pre>
+       * proto part of URI
+       * </pre>
+       */
+      public boolean hasProto() {
+        return ((bitField0_ & 0x00000001) == 0x00000001);
+      }
+      /**
+       * <code>optional string proto = 1;</code>
+       *
+       * <pre>
+       * proto part of URI
+       * </pre>
+       */
+      public java.lang.String getProto() {
+        java.lang.Object ref = proto_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          proto_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string proto = 1;</code>
+       *
+       * <pre>
+       * proto part of URI
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getProtoBytes() {
+        java.lang.Object ref = proto_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          proto_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string proto = 1;</code>
+       *
+       * <pre>
+       * proto part of URI
+       * </pre>
+       */
+      public Builder setProto(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        proto_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string proto = 1;</code>
+       *
+       * <pre>
+       * proto part of URI
+       * </pre>
+       */
+      public Builder clearProto() {
+        bitField0_ = (bitField0_ & ~0x00000001);
+        proto_ = getDefaultInstance().getProto();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string proto = 1;</code>
+       *
+       * <pre>
+       * proto part of URI
+       * </pre>
+       */
+      public Builder setProtoBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000001;
+        proto_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string user = 2;
+      private java.lang.Object user_ = "";
+      /**
+       * <code>optional string user = 2;</code>
+       *
+       * <pre>
+       * user part of URI
+       * </pre>
+       */
+      public boolean hasUser() {
+        return ((bitField0_ & 0x00000002) == 0x00000002);
+      }
+      /**
+       * <code>optional string user = 2;</code>
+       *
+       * <pre>
+       * user part of URI
+       * </pre>
+       */
+      public java.lang.String getUser() {
+        java.lang.Object ref = user_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          user_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string user = 2;</code>
+       *
+       * <pre>
+       * user part of URI
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getUserBytes() {
+        java.lang.Object ref = user_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          user_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string user = 2;</code>
+       *
+       * <pre>
+       * user part of URI
+       * </pre>
+       */
+      public Builder setUser(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        user_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string user = 2;</code>
+       *
+       * <pre>
+       * user part of URI
+       * </pre>
+       */
+      public Builder clearUser() {
+        bitField0_ = (bitField0_ & ~0x00000002);
+        user_ = getDefaultInstance().getUser();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string user = 2;</code>
+       *
+       * <pre>
+       * user part of URI
+       * </pre>
+       */
+      public Builder setUserBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000002;
+        user_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string host = 3;
+      private java.lang.Object host_ = "";
+      /**
+       * <code>optional string host = 3;</code>
+       *
+       * <pre>
+       * host part of URI
+       * </pre>
+       */
+      public boolean hasHost() {
+        return ((bitField0_ & 0x00000004) == 0x00000004);
+      }
+      /**
+       * <code>optional string host = 3;</code>
+       *
+       * <pre>
+       * host part of URI
+       * </pre>
+       */
+      public java.lang.String getHost() {
+        java.lang.Object ref = host_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          host_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string host = 3;</code>
+       *
+       * <pre>
+       * host part of URI
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getHostBytes() {
+        java.lang.Object ref = host_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          host_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string host = 3;</code>
+       *
+       * <pre>
+       * host part of URI
+       * </pre>
+       */
+      public Builder setHost(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        host_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string host = 3;</code>
+       *
+       * <pre>
+       * host part of URI
+       * </pre>
+       */
+      public Builder clearHost() {
+        bitField0_ = (bitField0_ & ~0x00000004);
+        host_ = getDefaultInstance().getHost();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string host = 3;</code>
+       *
+       * <pre>
+       * host part of URI
+       * </pre>
+       */
+      public Builder setHostBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000004;
+        host_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string port = 4;
+      private java.lang.Object port_ = "";
+      /**
+       * <code>optional string port = 4;</code>
+       *
+       * <pre>
+       * port part of URI
+       * </pre>
+       */
+      public boolean hasPort() {
+        return ((bitField0_ & 0x00000008) == 0x00000008);
+      }
+      /**
+       * <code>optional string port = 4;</code>
+       *
+       * <pre>
+       * port part of URI
+       * </pre>
+       */
+      public java.lang.String getPort() {
+        java.lang.Object ref = port_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          port_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string port = 4;</code>
+       *
+       * <pre>
+       * port part of URI
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getPortBytes() {
+        java.lang.Object ref = port_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          port_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string port = 4;</code>
+       *
+       * <pre>
+       * port part of URI
+       * </pre>
+       */
+      public Builder setPort(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000008;
+        port_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string port = 4;</code>
+       *
+       * <pre>
+       * port part of URI
+       * </pre>
+       */
+      public Builder clearPort() {
+        bitField0_ = (bitField0_ & ~0x00000008);
+        port_ = getDefaultInstance().getPort();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string port = 4;</code>
+       *
+       * <pre>
+       * port part of URI
+       * </pre>
+       */
+      public Builder setPortBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000008;
+        port_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional string path = 5;
+      private java.lang.Object path_ = "";
+      /**
+       * <code>optional string path = 5;</code>
+       *
+       * <pre>
+       * path part of URI
+       * </pre>
+       */
+      public boolean hasPath() {
+        return ((bitField0_ & 0x00000010) == 0x00000010);
+      }
+      /**
+       * <code>optional string path = 5;</code>
+       *
+       * <pre>
+       * path part of URI
+       * </pre>
+       */
+      public java.lang.String getPath() {
+        java.lang.Object ref = path_;
+        if (!(ref instanceof java.lang.String)) {
+          java.lang.String s = ((com.google.protobuf.ByteString) ref)
+              .toStringUtf8();
+          path_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>optional string path = 5;</code>
+       *
+       * <pre>
+       * path part of URI
+       * </pre>
+       */
+      public com.google.protobuf.ByteString
+          getPathBytes() {
+        java.lang.Object ref = path_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          path_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>optional string path = 5;</code>
+       *
+       * <pre>
+       * path part of URI
+       * </pre>
+       */
+      public Builder setPath(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        path_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string path = 5;</code>
+       *
+       * <pre>
+       * path part of URI
+       * </pre>
+       */
+      public Builder clearPath() {
+        bitField0_ = (bitField0_ & ~0x00000010);
+        path_ = getDefaultInstance().getPath();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional string path = 5;</code>
+       *
+       * <pre>
+       * path part of URI
+       * </pre>
+       */
+      public Builder setPathBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  bitField0_ |= 0x00000010;
+        path_ = value;
+        onChanged();
+        return this;
+      }
+
+      // optional uint32 index = 6 [default = 0];
+      private int index_ ;
+      /**
+       * <code>optional uint32 index = 6 [default = 0];</code>
+       *
+       * <pre>
+       * identity index
+       * </pre>
+       */
+      public boolean hasIndex() {
+        return ((bitField0_ & 0x00000020) == 0x00000020);
+      }
+      /**
+       * <code>optional uint32 index = 6 [default = 0];</code>
+       *
+       * <pre>
+       * identity index
+       * </pre>
+       */
+      public int getIndex() {
+        return index_;
+      }
+      /**
+       * <code>optional uint32 index = 6 [default = 0];</code>
+       *
+       * <pre>
+       * identity index
+       * </pre>
+       */
+      public Builder setIndex(int value) {
+        bitField0_ |= 0x00000020;
+        index_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>optional uint32 index = 6 [default = 0];</code>
+       *
+       * <pre>
+       * identity index
+       * </pre>
+       */
+      public Builder clearIndex() {
+        bitField0_ = (bitField0_ & ~0x00000020);
+        index_ = 0;
+        onChanged();
+        return this;
+      }
+
+      // @@protoc_insertion_point(builder_scope:IdentityType)
+    }
+
+    static {
+      defaultInstance = new IdentityType(true);
+      defaultInstance.initFields();
+    }
+
+    // @@protoc_insertion_point(class_scope:IdentityType)
+  }
+
   public static final int WIRE_IN_FIELD_NUMBER = 50002;
   /**
    * <code>extend .google.protobuf.EnumValueOptions { ... }</code>
@@ -10785,6 +12245,11 @@ public final class TrezorType {
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
       internal_static_TxRequestSerializedType_fieldAccessorTable;
+  private static com.google.protobuf.Descriptors.Descriptor
+    internal_static_IdentityType_descriptor;
+  private static
+    com.google.protobuf.GeneratedMessage.FieldAccessorTable
+      internal_static_IdentityType_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -10825,40 +12290,42 @@ public final class TrezorType {
       ">\n\024TxRequestDetailsType\022\025\n\rrequest_index" +
       "\030\001 \001(\r\022\017\n\007tx_hash\030\002 \001(\014\"\\\n\027TxRequestSeri",
       "alizedType\022\027\n\017signature_index\030\001 \001(\r\022\021\n\ts" +
-      "ignature\030\002 \001(\014\022\025\n\rserialized_tx\030\003 \001(\014*\315\002" +
-      "\n\013FailureType\022\035\n\031Failure_UnexpectedMessa" +
-      "ge\020\001\022\032\n\026Failure_ButtonExpected\020\002\022\027\n\023Fail" +
-      "ure_SyntaxError\020\003\022\033\n\027Failure_ActionCance" +
-      "lled\020\004\022\027\n\023Failure_PinExpected\020\005\022\030\n\024Failu" +
-      "re_PinCancelled\020\006\022\026\n\022Failure_PinInvalid\020" +
-      "\007\022\034\n\030Failure_InvalidSignature\020\010\022\021\n\rFailu" +
-      "re_Other\020\t\022\032\n\026Failure_NotEnoughFunds\020\n\022\032" +
-      "\n\026Failure_NotInitialized\020\013\022\031\n\025Failure_Fi",
-      "rmwareError\020c*_\n\020OutputScriptType\022\020\n\014PAY" +
-      "TOADDRESS\020\000\022\023\n\017PAYTOSCRIPTHASH\020\001\022\021\n\rPAYT" +
-      "OMULTISIG\020\002\022\021\n\rPAYTOOPRETURN\020\003*6\n\017InputS" +
-      "criptType\022\020\n\014SPENDADDRESS\020\000\022\021\n\rSPENDMULT" +
-      "ISIG\020\001*D\n\013RequestType\022\013\n\007TXINPUT\020\000\022\014\n\010TX" +
-      "OUTPUT\020\001\022\n\n\006TXMETA\020\002\022\016\n\nTXFINISHED\020\003*\302\002\n" +
-      "\021ButtonRequestType\022\027\n\023ButtonRequest_Othe" +
-      "r\020\001\022\"\n\036ButtonRequest_FeeOverThreshold\020\002\022" +
-      "\037\n\033ButtonRequest_ConfirmOutput\020\003\022\035\n\031Butt" +
-      "onRequest_ResetDevice\020\004\022\035\n\031ButtonRequest",
-      "_ConfirmWord\020\005\022\034\n\030ButtonRequest_WipeDevi" +
-      "ce\020\006\022\035\n\031ButtonRequest_ProtectCall\020\007\022\030\n\024B" +
-      "uttonRequest_SignTx\020\010\022\037\n\033ButtonRequest_F" +
-      "irmwareCheck\020\t\022\031\n\025ButtonRequest_Address\020" +
-      "\n*\177\n\024PinMatrixRequestType\022 \n\034PinMatrixRe" +
-      "questType_Current\020\001\022!\n\035PinMatrixRequestT" +
-      "ype_NewFirst\020\002\022\"\n\036PinMatrixRequestType_N" +
-      "ewSecond\020\003:4\n\007wire_in\022!.google.protobuf." +
-      "EnumValueOptions\030\322\206\003 \001(\010:5\n\010wire_out\022!.g" +
-      "oogle.protobuf.EnumValueOptions\030\323\206\003 \001(\010:",
-      ":\n\rwire_debug_in\022!.google.protobuf.EnumV" +
-      "alueOptions\030\324\206\003 \001(\010:;\n\016wire_debug_out\022!." +
-      "google.protobuf.EnumValueOptions\030\325\206\003 \001(\010" +
-      "B-\n\037com.satoshilabs.trezor.protobufB\nTre" +
-      "zorType"
+      "ignature\030\002 \001(\014\022\025\n\rserialized_tx\030\003 \001(\014\"g\n" +
+      "\014IdentityType\022\r\n\005proto\030\001 \001(\t\022\014\n\004user\030\002 \001" +
+      "(\t\022\014\n\004host\030\003 \001(\t\022\014\n\004port\030\004 \001(\t\022\014\n\004path\030\005" +
+      " \001(\t\022\020\n\005index\030\006 \001(\r:\0010*\315\002\n\013FailureType\022\035" +
+      "\n\031Failure_UnexpectedMessage\020\001\022\032\n\026Failure" +
+      "_ButtonExpected\020\002\022\027\n\023Failure_SyntaxError" +
+      "\020\003\022\033\n\027Failure_ActionCancelled\020\004\022\027\n\023Failu" +
+      "re_PinExpected\020\005\022\030\n\024Failure_PinCancelled" +
+      "\020\006\022\026\n\022Failure_PinInvalid\020\007\022\034\n\030Failure_In",
+      "validSignature\020\010\022\021\n\rFailure_Other\020\t\022\032\n\026F" +
+      "ailure_NotEnoughFunds\020\n\022\032\n\026Failure_NotIn" +
+      "itialized\020\013\022\031\n\025Failure_FirmwareError\020c*_" +
+      "\n\020OutputScriptType\022\020\n\014PAYTOADDRESS\020\000\022\023\n\017" +
+      "PAYTOSCRIPTHASH\020\001\022\021\n\rPAYTOMULTISIG\020\002\022\021\n\r" +
+      "PAYTOOPRETURN\020\003*6\n\017InputScriptType\022\020\n\014SP" +
+      "ENDADDRESS\020\000\022\021\n\rSPENDMULTISIG\020\001*D\n\013Reque" +
+      "stType\022\013\n\007TXINPUT\020\000\022\014\n\010TXOUTPUT\020\001\022\n\n\006TXM" +
+      "ETA\020\002\022\016\n\nTXFINISHED\020\003*\302\002\n\021ButtonRequestT" +
+      "ype\022\027\n\023ButtonRequest_Other\020\001\022\"\n\036ButtonRe",
+      "quest_FeeOverThreshold\020\002\022\037\n\033ButtonReques" +
+      "t_ConfirmOutput\020\003\022\035\n\031ButtonRequest_Reset" +
+      "Device\020\004\022\035\n\031ButtonRequest_ConfirmWord\020\005\022" +
+      "\034\n\030ButtonRequest_WipeDevice\020\006\022\035\n\031ButtonR" +
+      "equest_ProtectCall\020\007\022\030\n\024ButtonRequest_Si" +
+      "gnTx\020\010\022\037\n\033ButtonRequest_FirmwareCheck\020\t\022" +
+      "\031\n\025ButtonRequest_Address\020\n*\177\n\024PinMatrixR" +
+      "equestType\022 \n\034PinMatrixRequestType_Curre" +
+      "nt\020\001\022!\n\035PinMatrixRequestType_NewFirst\020\002\022" +
+      "\"\n\036PinMatrixRequestType_NewSecond\020\003:4\n\007w",
+      "ire_in\022!.google.protobuf.EnumValueOption" +
+      "s\030\322\206\003 \001(\010:5\n\010wire_out\022!.google.protobuf." +
+      "EnumValueOptions\030\323\206\003 \001(\010::\n\rwire_debug_i" +
+      "n\022!.google.protobuf.EnumValueOptions\030\324\206\003" +
+      " \001(\010:;\n\016wire_debug_out\022!.google.protobuf" +
+      ".EnumValueOptions\030\325\206\003 \001(\010B-\n\037com.satoshi" +
+      "labs.trezor.protobufB\nTrezorType"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
       new com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner() {
@@ -10925,6 +12392,12 @@ public final class TrezorType {
             com.google.protobuf.GeneratedMessage.FieldAccessorTable(
               internal_static_TxRequestSerializedType_descriptor,
               new java.lang.String[] { "SignatureIndex", "Signature", "SerializedTx", });
+          internal_static_IdentityType_descriptor =
+            getDescriptor().getMessageTypes().get(10);
+          internal_static_IdentityType_fieldAccessorTable = new
+            com.google.protobuf.GeneratedMessage.FieldAccessorTable(
+              internal_static_IdentityType_descriptor,
+              new java.lang.String[] { "Proto", "User", "Host", "Port", "Path", "Index", });
           wireIn.internalInit(descriptor.getExtensions().get(0));
           wireOut.internalInit(descriptor.getExtensions().get(1));
           wireDebugIn.internalInit(descriptor.getExtensions().get(2));

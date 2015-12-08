@@ -6,6 +6,7 @@ import com.google.protobuf.Message;
 import org.multibit.hd.hardware.core.events.MessageEvent;
 import org.multibit.hd.hardware.core.events.MessageEventType;
 import org.multibit.hd.hardware.core.events.MessageEvents;
+import org.multibit.hd.hardware.core.messages.Features;
 import org.multibit.hd.hardware.trezor.wallets.AbstractTrezorHardwareWallet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
   private static final Logger log = LoggerFactory.getLogger(TrezorHardwareWalletClient.class);
 
   private final AbstractTrezorHardwareWallet trezor;
+
   private boolean isTrezorValid = false;
 
   /**
@@ -39,6 +41,11 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
     Preconditions.checkNotNull(trezor, "'trezor' must be present");
 
     this.trezor = trezor;
+  }
+
+  @Override
+  public String name() {
+    return trezor.name();
   }
 
   @Override
@@ -86,7 +93,7 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
     isTrezorValid = trezor.connect();
 
     if (isTrezorValid) {
-      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_CONNECTED);
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_CONNECTED, name());
     }
 
     return isTrezorValid;
@@ -122,4 +129,24 @@ public class TrezorHardwareWalletClient extends AbstractTrezorHardwareWalletClie
 
   }
 
+  @Override
+  public boolean verifyFeatures(Features features) {
+
+    String version = features.getVersion();
+    // Test for firmware compatibility
+    if (version.equals("1.3.0")
+      || version.equals("1.3.1")
+      || version.equals("1.3.2")  // Never released by SatoshiLabs but added for completeness
+      || version.startsWith("1.2.")
+      || version.startsWith("1.1.")
+      || version.startsWith("1.0.")
+      || version.startsWith("0.")
+      ) {
+      log.warn("Unsupported firmware: {}", version);
+      return false;
+    }
+
+    // Must be OK to be here
+    return true;
+  }
 }

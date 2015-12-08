@@ -8,6 +8,7 @@ import org.multibit.hd.hardware.core.HardwareWalletException;
 import org.multibit.hd.hardware.core.events.MessageEvent;
 import org.multibit.hd.hardware.core.events.MessageEventType;
 import org.multibit.hd.hardware.core.events.MessageEvents;
+import org.multibit.hd.hardware.core.messages.Features;
 import org.multibit.hd.hardware.trezor.utils.TrezorMessageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -69,6 +70,11 @@ public class TrezorRelayClient extends AbstractTrezorHardwareWalletClient {
   public TrezorRelayClient(String relayServerLocation, int relayServerPort) {
     this.relayServerLocation = relayServerLocation;
     this.relayServerPort = relayServerPort;
+  }
+
+  @Override
+  public String name() {
+    return "TREZOR";
   }
 
   @Override
@@ -140,10 +146,10 @@ public class TrezorRelayClient extends AbstractTrezorHardwareWalletClient {
   public boolean connect() {
 
     if (socket != null) {
-      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_CONNECTED);
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_CONNECTED, name());
       return true;
     } else {
-      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DISCONNECTED);
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DISCONNECTED, name());
       return false;
     }
 
@@ -234,5 +240,10 @@ public class TrezorRelayClient extends AbstractTrezorHardwareWalletClient {
     }
 
     return Optional.absent();
+  }
+
+  @Override
+  public boolean verifyFeatures(Features features) {
+    return true;
   }
 }

@@ -5,8 +5,6 @@ import org.multibit.hd.hardware.core.events.HardwareWalletEventType;
 import org.multibit.hd.hardware.core.events.HardwareWalletEvents;
 import org.multibit.hd.hardware.core.events.MessageEvent;
 import org.multibit.hd.hardware.core.messages.Features;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * <p>State to provide the following to hardware wallet clients:</p>
@@ -24,8 +22,6 @@ import org.slf4j.LoggerFactory;
  */
 public class ConnectedState extends AbstractHardwareWalletState {
 
-  private static final Logger log = LoggerFactory.getLogger(ConnectedState.class);
-
   @Override
   public void await(HardwareWalletContext context) {
 
@@ -41,17 +37,9 @@ public class ConnectedState extends AbstractHardwareWalletState {
       case FEATURES:
         Features features = (Features) event.getMessage().get();
         context.setFeatures(features);
-        String version = features.getVersion();
-        // Test for firmware compatibility
-        if (version.equals("1.3.0")
-          || version.equals("1.3.1")
-          || version.equals("1.3.2")  // Never released by SatoshiLabs but added for completeness
-          || version.startsWith("1.2.")
-          || version.startsWith("1.1.")
-          || version.startsWith("1.0.")
-          || version.startsWith("0.")
-          ) {
-          log.warn("Unsupported firmware: {}", version);
+
+        // Verify the Features through the client
+        if (!client.verifyFeatures(features)) {
           features.setSupported(false);
           context.resetToFailed();
         } else {
@@ -60,7 +48,7 @@ public class ConnectedState extends AbstractHardwareWalletState {
         }
         break;
       case FAILURE:
-        HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_OPERATION_FAILED, event.getMessage().get());
+        HardwareWalletEvents.fireHardwareWalletEvent(HardwareWalletEventType.SHOW_OPERATION_FAILED, event.getMessage().get(), client.name());
         context.resetToInitialised();
         break;
       default:

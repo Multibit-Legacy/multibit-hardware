@@ -59,7 +59,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
    * Monitor the USB HID read buffer and handle the firing of low level messages when a message is found
    * A new one is required after a detach
    */
-  private ExecutorService monitorHidExecutorService;
+  private ExecutorService monitorHidExecutorService= null;
 
   /**
    * Default constructor for use with dynamic binding
@@ -110,6 +110,11 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
   }
 
   @Override
+  public String name() {
+    return "TREZOR";
+  }
+
+  @Override
   public boolean attach() {
 
     // Ensure we close any earlier connections
@@ -150,12 +155,13 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
     locatedDevice = Optional.absent();
 
     log.debug("Shutdown HID monitoring");
-    monitorHidExecutorService.shutdownNow();
-
-    try {
-      monitorHidExecutorService.awaitTermination(1, TimeUnit.SECONDS);
-    } catch (InterruptedException e) {
-      log.error("Could not cleanly shutdown the low level monitor executor service during soft detach");
+    if (monitorHidExecutorService != null) {
+      monitorHidExecutorService.shutdownNow();
+      try {
+        monitorHidExecutorService.awaitTermination(1, TimeUnit.SECONDS);
+      } catch (InterruptedException e) {
+        log.error("Could not cleanly shutdown the low level monitor executor service during soft detach");
+      }
     }
 
     log.info("Detached from Trezor. HID events remain available.");
@@ -176,7 +182,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
     log.info("Hard detach complete. HID events are stopped.");
 
     // Let everyone know
-    MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED_HARD);
+    MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED_HARD, name());
 
   }
 
@@ -194,7 +200,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
 
       if (!locatedDevice.isPresent()) {
         log.debug("Failed to locate. Device must be detached.");
-        MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED);
+        MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED, name());
         return false;
       }
 
@@ -316,8 +322,8 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
           new MessageEvent(
             MessageEventType.DEVICE_FAILED,
             Optional.<HardwareWalletMessage>absent(),
-            Optional.<Message>absent()
-          ));
+            Optional.<Message>absent(),
+            name()));
       }
 
       if (received == 0) {
@@ -373,7 +379,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
     log.debug("Packet complete");
 
     // Parse the message
-    return Optional.of(TrezorMessageUtils.parse(type, Arrays.copyOfRange(messageBuffer.array(), 0, msgSize)));
+    return Optional.fromNullable(TrezorMessageUtils.parse(type, Arrays.copyOfRange(messageBuffer.array(), 0, msgSize)));
 
   }
 
@@ -389,7 +395,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
     if (vendorId.get().equals(attachedVendorId) &&
       productId.get().equals(attachedProductId)) {
       // Inform others of this event
-      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_ATTACHED);
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_ATTACHED, name());
     }
 
   }
@@ -406,7 +412,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
     if (vendorId.get().equals(detachedVendorId) &&
       productId.get().equals(detachedProductId)) {
       // Inform others of this event
-      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED);
+      MessageEvents.fireMessageEvent(MessageEventType.DEVICE_DETACHED, name());
     }
 
   }
@@ -414,7 +420,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
   @Override
   public void hidFailure(HidServicesEvent event) {
 
-    MessageEvents.fireMessageEvent(MessageEventType.DEVICE_FAILED);
+    MessageEvents.fireMessageEvent(MessageEventType.DEVICE_FAILED, name());
 
   }
 }

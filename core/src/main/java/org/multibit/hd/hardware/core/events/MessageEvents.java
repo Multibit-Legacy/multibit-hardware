@@ -133,7 +133,7 @@ public class MessageEvents {
       new Callable<Boolean>() {
         @Override
         public Boolean call() {
-          log.debug("Firing 'message' event: {}", event.getEventType().name());
+          log.debug("Firing 'message' event: {} for {}", event.getEventType().name(), event.getSource());
           messageEventBus.post(event);
 
           // Must be OK to be here
@@ -160,8 +160,9 @@ public class MessageEvents {
    * <p>A message event without a protobuf message is used for communicating system status changes (e.g. DISCONNECT)</p>
    *
    * @param messageEventType The message type (e.g. DEVICE_CONNECTED)
+   * @param source           The client name acting as the source (e.g. "TREZOR", "KEEP_KEY" etc)
    */
-  public static void fireMessageEvent(final MessageEventType messageEventType) {
+  public static void fireMessageEvent(final MessageEventType messageEventType, final String source) {
 
     Preconditions.checkNotNull(messageEventType, "'messageType' must be present");
 
@@ -169,13 +170,13 @@ public class MessageEvents {
       new Callable<Boolean>() {
         @Override
         public Boolean call() {
-          log.debug("Firing 'message' event type: {}", messageEventType.name());
+          log.debug("Firing 'message' event type: {} for {}", messageEventType.name(), source);
           messageEventBus.post(
             new MessageEvent(
               messageEventType,
               Optional.<HardwareWalletMessage>absent(),
-              Optional.<Message>absent()
-            ));
+              Optional.<Message>absent(),
+              source));
 
           // Must be OK to be here
           return true;
