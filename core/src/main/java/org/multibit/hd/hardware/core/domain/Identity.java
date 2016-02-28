@@ -32,10 +32,10 @@ public class Identity {
     Preconditions.checkNotNull(identityUri, "'identityUri' must be present");
 
     Preconditions.checkNotNull(challengeHidden, "'challengeHidden' must be present");
-    Preconditions.checkArgument(challengeHidden.length <= 64, "'challengeHidden' must be 64 bytes or less");
+    Preconditions.checkArgument(challengeHidden.length <= 256, "'challengeHidden' must be 256 bytes or less");
 
     Preconditions.checkNotNull(challengeVisual, "'challengeVisual' must be present");
-    Preconditions.checkArgument(challengeVisual.length() <= 64, "'challengeVisual' must be 64 bytes or less");
+    Preconditions.checkArgument(challengeVisual.length() <= 256, "'challengeVisual' must be 256 bytes or less");
 
     this.identityUri = identityUri;
     this.challengeHidden = Arrays.copyOf(challengeHidden, challengeHidden.length);
