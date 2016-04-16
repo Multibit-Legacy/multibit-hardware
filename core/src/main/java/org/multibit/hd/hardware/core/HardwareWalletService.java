@@ -326,9 +326,32 @@ public class HardwareWalletService {
   }
 
   /**
-   * <p>Provide additional entropy to the device to reduce risk of hardware compromise</p>
-   *
-   * @param entropy Random bytes provided by a secure random number generator (see {@link #generateEntropy()}
+    * <p>
+     * Provide the user entered passphrase</p>
+     *
+     * @param passphrase The passphrase taken from the user computer input
+     */
+    public void providePassphrase(String passphrase) {
+
+        // Use the FSM context to decide the appropriate continuation point
+        switch (context.getCurrentUseCase()) {
+            case DETACHED:
+                break;
+            case REQUEST_PUBLIC_KEY_FOR_IDENTITY:
+                context.continueGetPublicKeyForIdentityUseCase_Passphrase(passphrase);
+                break;                        
+            case SIGN_IDENTITY:
+                context.continueSignIdentity_Passphrase(passphrase);
+                break;
+            default:
+                log.warn("Unknown passphrase request use case: {}", context.getCurrentUseCase().name());
+        }
+    }
+
+    /**
+     * <p>
+     * Provide additional entropy to the device to reduce risk of hardware compromise</p>
+     * @param entropy Random bytes provided by a secure random number generator (see {@link #generateEntropy()}
    */
   public void provideEntropy(byte[] entropy) {
 

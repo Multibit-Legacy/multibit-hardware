@@ -239,6 +239,7 @@ public final class TrezorMessageUtils {
         case MessageType_PassphraseRequest:
           message = TrezorMessage.PassphraseRequest.parseFrom(buffer);
           messageEventType = MessageEventType.PASSPHRASE_REQUEST;
+          hardwareWalletMessage = TrezorMessageAdapter.adaptPassphraseRequest((TrezorMessage.PassphraseRequest) message);
           break;
         case MessageType_PassphraseAck:
           message = TrezorMessage.PassphraseAck.parseFrom(buffer);

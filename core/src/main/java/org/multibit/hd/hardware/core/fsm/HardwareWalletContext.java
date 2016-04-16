@@ -691,7 +691,24 @@ public class HardwareWalletContext {
 
     // Issue starting message to elicit the event
     client.pinMatrixAck(pin);
+ }
+  
+  /**
+   * <p>Continue the "get public key for identity" use case with the provision of the current passphrase</p>
+   *
+   * @param passphrase The passphrase
+   */
+  public void continueGetPublicKeyForIdentityUseCase_Passphrase(String passphrase) {
 
+    log.debug("Continue 'get public key for identity' use case (provide passphrase)");
+
+    // Store the overall context parameters
+
+    // Set the event receiving state
+    currentState = HardwareWalletStates.newConfirmGetPublicKeyForIdentityState();
+
+    // Issue starting message to elicit the event
+    client.passphraseAck(passphrase);
   }
 
   /**
@@ -1086,4 +1103,22 @@ public class HardwareWalletContext {
 
   }
 
+  /**
+   * <p>Continue the "sign identity" use case with the provision of the current passphrase</p>
+   *
+   * @param passphrase The passphrase
+   */
+  public void continueSignIdentity_Passphrase(String passphrase) {
+
+    log.debug("Continue 'sign identity' use case (provide passphrase)");
+
+    // Store the overall context parameters
+
+    // Set the event receiving state
+    currentState = HardwareWalletStates.newConfirmSignIdentityState();
+
+    // Issue starting message to elicit the event
+    client.passphraseAck(passphrase);
+
+  }
 }
