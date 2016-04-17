@@ -192,6 +192,18 @@ public class TrezorMessageAdapter {
    *
    * @return The adapted Core message
    */
+  public static PassphraseRequest adaptPassphraseRequest(TrezorMessage.PassphraseRequest source) {
+
+    return new PassphraseRequest();
+
+  }
+
+  
+  /**
+   * @param source The source message
+   *
+   * @return The adapted Core message
+   */
   public static PinMatrixRequestType adaptPinMatrixRequestType(TrezorType.PinMatrixRequestType source) {
 
     switch (source) {

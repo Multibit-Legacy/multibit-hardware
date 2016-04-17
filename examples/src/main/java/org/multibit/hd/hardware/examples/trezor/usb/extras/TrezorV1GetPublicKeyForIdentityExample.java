@@ -136,6 +136,16 @@ public class TrezorV1GetPublicKeyForIdentityExample {
             break;
         }
         break;
+            case SHOW_PASSPHRASE_ENTRY:
+                // Device requires the current passphrase to proceed
+                Scanner passKeyboard = new Scanner(System.in);
+                String passphrase;
+
+                System.err.println("Please enter your current passphrase: \n");
+                passphrase = passKeyboard.next();
+                hardwareWalletService.providePassphrase(passphrase);
+
+                break;
       case PUBLIC_KEY_FOR_IDENTITY:
         // Successful identity public key
         PublicKey pubKey = (PublicKey) event.getMessage().get();

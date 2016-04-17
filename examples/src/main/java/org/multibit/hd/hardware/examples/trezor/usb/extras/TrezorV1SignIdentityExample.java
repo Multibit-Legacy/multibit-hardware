@@ -140,6 +140,16 @@ public class TrezorV1SignIdentityExample {
             break;
         }
         break;
+            case SHOW_PASSPHRASE_ENTRY:
+                // Device requires the current passphrase to proceed
+                Scanner passKeyboard = new Scanner(System.in);
+                String passphrase;
+
+                System.err.println("Please enter your current passphrase: \n");
+                passphrase = passKeyboard.next();
+                hardwareWalletService.providePassphrase(passphrase);
+
+                break;
       case SIGNED_IDENTITY:
         // Successful identity signature
         SignedIdentity signature = (SignedIdentity) event.getMessage().get();
