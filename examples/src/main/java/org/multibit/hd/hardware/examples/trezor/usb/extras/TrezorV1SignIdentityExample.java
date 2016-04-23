@@ -110,7 +110,7 @@ public class TrezorV1SignIdentityExample {
         if (hardwareWalletService.isWalletPresent()) {
 
           // Create an identity
-          URI uri =URI.create("https://user1@multibit.org/trezor-connect");
+          URI uri =URI.create("https://user@multibit.org/trezor-connect");  // avoid using underscore in hostname (Java URI restriction)
           Identity identity = new Identity(uri, 0, challengeHidden, challengeVisual, "nist256p1");
 
           // Request an identity signature from the device

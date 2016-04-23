@@ -108,7 +108,7 @@ public class TrezorV1GetPublicKeyForIdentityExample {
         if (hardwareWalletService.isWalletPresent()) {
 
           // Create an identity
-          URI uri = URI.create("ssh://user@multibit.org/trezor-connect");
+          URI uri = URI.create("ssh://user@multibit.org/trezor-connect"); // avoid using underscore in hostname (Java URI restriction)
 
           // Request an identity public key from the device (no screen support at present)
           hardwareWalletService.requestPublicKeyForIdentity(uri, 0, "nist256p1", false);
