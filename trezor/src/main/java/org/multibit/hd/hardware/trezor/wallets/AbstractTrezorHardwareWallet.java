@@ -24,7 +24,10 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractTrezorHardwareWallet extends AbstractHardwareWallet {
 
   private static final Logger log = LoggerFactory.getLogger(AbstractTrezorHardwareWallet.class);
-  private static int hid_version = 1;
+  protected static final int PACKET_LENGTH = 64;
+  protected static final int PACKET_LENGTH_HID1 = 64;
+  protected static final int PACKET_LENGTH_HID2 = 65;
+  protected int hid_version;
 
   @Override
   public HardwareWalletSpecification getDefaultSpecification() {
@@ -66,12 +69,12 @@ public abstract class AbstractTrezorHardwareWallet extends AbstractHardwareWalle
 
       byte[] buffer;
       if (hid_version == 2) {
-          buffer = new byte[65];
+          buffer = new byte[PACKET_LENGTH_HID2];
           buffer[0] = 0;
           buffer[1] = 63; // Length
           messageBuffer.get(buffer, 2, 63); // Payload
       } else {
-          buffer = new byte[64];
+          buffer = new byte[PACKET_LENGTH_HID1];
           buffer[0] = 63; // Length
           messageBuffer.get(buffer, 1, 63); // Payload
       }
@@ -90,6 +93,14 @@ public abstract class AbstractTrezorHardwareWallet extends AbstractHardwareWalle
       writeToDevice(buffer);
 
     }
+  }
+
+  protected int calculateHidPacketLength() {
+      if (hid_version == 1) {
+          return PACKET_LENGTH_HID1;
+      } else {
+          return PACKET_LENGTH_HID2;
+      }
   }
 
   /**
