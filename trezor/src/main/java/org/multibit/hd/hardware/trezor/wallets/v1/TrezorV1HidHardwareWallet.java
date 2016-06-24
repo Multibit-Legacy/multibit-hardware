@@ -208,6 +208,34 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
 
     log.info("Located a Trezor device.");
 
+    log.info("Determining HID version.");
+
+    byte[] buf;
+    int r;
+
+    buffer = new byte[65];
+    Arrays.fill(buffer, 0xFF);
+    buffer[0] = 0;
+    buffer[1] = 63;
+    r = locatedDevice.get().write(buffer, buffer.length, (byte) 0x00);
+    if (r == 65) {
+        hid_version = 2;
+        log.info("HID version 2 found.");
+    } else {
+        buffer = new byte[64];
+        Arrays.fill(buffer, 0xFF);
+        buffer[0] = 63;
+        r = locatedDevice.get().write(buffer, buffer.length, (byte) 0x00);
+        if (r == 64) {
+            hid_version = 1;
+            log.info("HID version 1 found.");
+        } else {
+            log.error("Unknown HID version.");
+            return false;
+        }
+    }
+
+
     // Ensure any pre-existing monitors are terminated
     if (monitorHidExecutorService != null && !monitorHidExecutorService.isShutdown()) {
       log.warn("Low level monitor executor service is still running. Device not detached properly. Attempting clean shutdown of executor service...");

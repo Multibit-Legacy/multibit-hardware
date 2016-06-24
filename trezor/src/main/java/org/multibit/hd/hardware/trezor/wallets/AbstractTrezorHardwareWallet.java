@@ -24,6 +24,7 @@ import java.util.concurrent.TimeUnit;
 public abstract class AbstractTrezorHardwareWallet extends AbstractHardwareWallet {
 
   private static final Logger log = LoggerFactory.getLogger(AbstractTrezorHardwareWallet.class);
+  private static int hid_version = 1;
 
   @Override
   public HardwareWalletSpecification getDefaultSpecification() {
@@ -60,17 +61,25 @@ public abstract class AbstractTrezorHardwareWallet extends AbstractHardwareWalle
     log.debug("Writing {} packets", packets);
     messageBuffer.rewind();
 
-    // HID requires 64 byte packets with 63 bytes of payload
+    // HID requires 64/65 byte packets with 63 bytes of payload
     for (int i = 0; i < packets; i++) {
 
-      byte[] buffer = new byte[64];
-      buffer[0] = 63; // Length
-      messageBuffer.get(buffer, 1, 63); // Payload
+      byte[] buffer;
+      if (hid_version == 2) {
+          buffer = new byte[65];
+          buffer[0] = 0;
+          buffer[1] = 63; // Length
+          messageBuffer.get(buffer, 2, 63); // Payload
+      } else {
+          buffer = new byte[64];
+          buffer[0] = 63; // Length
+          messageBuffer.get(buffer, 1, 63); // Payload
+      }
 
       if (log.isTraceEnabled()) {
         // Describe the packet
         String s = "Packet [" + i + "]: ";
-        for (int j = 0; j < 64; j++) {
+        for (int j = 0; j < buffer.length; j++) {
           s += String.format(" %02x", buffer[j]);
         }
 
