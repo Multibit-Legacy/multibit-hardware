@@ -271,10 +271,13 @@ public class KeepKeyV1HidHardwareWallet extends AbstractKeepKeyHardwareWallet im
 
     log.debug("Writing buffer to HID pipe...");
 
+    byte[] report = new byte[buffer.length - 1];
+    System.arraycopy(buffer, 1, report, 0, report.length);
+
     int bytesSent = locatedDevice.get().write(
-      buffer,
-      PACKET_LENGTH,
-      (byte) 0x00
+      report,
+      report.length,
+      buffer[0]
     );
 
     log.debug("Wrote {} bytes to USB pipe.", bytesSent);
