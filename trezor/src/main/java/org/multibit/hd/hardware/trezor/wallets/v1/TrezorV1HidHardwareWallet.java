@@ -206,7 +206,8 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
 
     }
 
-    log.info("Located a Trezor device.");
+        log.info("Determining HID version...");
+        saveHidVersion(); // Trezor firmware 1.3.6+ uses different (marked as hid_version=2) packet length
 
     // Ensure any pre-existing monitors are terminated
     if (monitorHidExecutorService != null && !monitorHidExecutorService.isShutdown()) {
@@ -272,7 +273,7 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
 
     int bytesSent = locatedDevice.get().write(
       buffer,
-      PACKET_LENGTH,
+      calculateHidPacketLength(),
       (byte) 0x00
     );
 
@@ -423,4 +424,31 @@ public class TrezorV1HidHardwareWallet extends AbstractTrezorHardwareWallet impl
     MessageEvents.fireMessageEvent(MessageEventType.DEVICE_FAILED, name());
 
   }
+
+    private void saveHidVersion() {
+        byte[] buffer;
+        int r;
+
+        buffer = new byte[PACKET_LENGTH_HID2]; // first look for newer HID packet
+        Arrays.fill(buffer, (byte) 0xFF);
+        buffer[0] = 0;
+        buffer[1] = 63;
+        r = locatedDevice.get().write(buffer, buffer.length, (byte) 0x00);
+        if (r == PACKET_LENGTH_HID2) {
+            hid_version = 2;
+            log.info("Trezor device - HID version 2 found.");
+        } else {
+            buffer = new byte[PACKET_LENGTH_HID1]; // fallback to older HID packet
+            Arrays.fill(buffer, (byte) 0xFF);
+            buffer[0] = 63;
+            r = locatedDevice.get().write(buffer, buffer.length, (byte) 0x00);
+            if (r == PACKET_LENGTH_HID1) {
+                hid_version = 1;
+                log.info("Trezor device - HID version 1 found.");
+            } else {
+                log.error("Unknown HID version.");
+                throw new IllegalStateException("Failed to create client due to device unknown HID version");
+            }
+        }
+    }
 }
