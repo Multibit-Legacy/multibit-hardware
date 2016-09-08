@@ -83,7 +83,7 @@ public void onHardwareWalletEvent(HardwareWalletEvent event) {
 
 At present we support
 
-* [Trezor](https://buytrezor.com/?a=multibit.org)
+* TREZOR
 * [KeepKey](https://keepkey.com)
 
 #### What use cases do you support ?

@@ -23,12 +23,12 @@
 
   </properties>
 
-  <url>http://github.com/bitcoin-solutions/mbhd-hardware</url>
+  <url>http://github.com/keepkey/multibit-hardware</url>
   <inceptionYear>2013</inceptionYear>
 
   <organization>
-    <name>Bitcoin Solutions Ltd</name>
-    <url>http://bitcoin-solutions.co.uk</url>
+    <name>KeepKey</name>
+    <url>https://www.keepkey.com/</url>
   </organization>
 
   <developers>
@@ -39,6 +39,14 @@
     <developer>
       <name>Jim Burton</name>
       <email>jim.burton@bitcoin-solutions.co.uk</email>
+    </developer>
+    <developer>
+      <name>Kenneth Heutmaker</name>
+      <email>ken@keepkey.com</email>
+    </developer>
+    <developer>
+      <name>Kartik Iyer</name>
+      <email>kartik@keepkey.com</email>
     </developer>
   </developers>
 
@@ -53,7 +61,7 @@
 
   <issueManagement>
     <system>GitHub</system>
-    <url>https://github.com/bitcoin-solutions/mbhd-hardware/issues</url>
+    <url>https://github.com/keepkey/multibit-hardware/issues</url>
   </issueManagement>
 
   <repositories>
@@ -61,12 +69,12 @@
     <!-- Use https://raw.github.com to provide a consistent result -->
     <repository>
       <id>mbhd-maven-release</id>
-      <url>https://raw.github.com/bitcoin-solutions/mbhd-maven/master/releases</url>
+      <url>https://raw.github.com/keepkey/mbhd-maven/master/releases</url>
       <releases/>
     </repository>
     <repository>
       <id>mbhd-maven-snapshot</id>
-      <url>https://raw.github.com/bitcoin-solutions/mbhd-maven/master/snapshots</url>
+      <url>https://raw.github.com/keepkey/mbhd-maven/master/snapshots</url>
       <!-- These artifacts change frequently during development iterations -->
       <snapshots>
         <updatePolicy>always</updatePolicy>
@@ -90,9 +98,9 @@
   </distributionManagement>
 
   <scm>
-    <connection>scm:git:git@github.com:bitcoin-solutions/mbhd-hardware.git</connection>
-    <developerConnection>scm:git:git@github.com:bitcoin-solutions/mbhd-hardware.git</developerConnection>
-    <url>git@github.com:bitcoin-solutions/mbhd-hardware.git</url>
+    <connection>scm:git:git@github.com:keepkey/multibit-hardware.git</connection>
+    <developerConnection>scm:git:git@github.com:keepkey/multibit-hardware.git</developerConnection>
+    <url>git@github.com:keepkey/multibit-hardware.git</url>
     <tag>HEAD</tag>
   </scm>
 
