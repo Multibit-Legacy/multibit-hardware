@@ -5,7 +5,7 @@
 
   <groupId>org.multibit.hd.hardware</groupId>
   <artifactId>parent</artifactId>
-  <version>0.8.0</version>
+  <version>0.8.0-SNAPSHOT</version>
 
   <packaging>pom</packaging>
 
@@ -83,6 +83,7 @@
 
   </repositories>
 
+  <!--
   <distributionManagement>
     <snapshotRepository>
       <id>sonatype-nexus-snapshots</id>
@@ -96,6 +97,7 @@
     </repository>
     <downloadUrl>https://oss.sonatype.org/content/groups/public/uk/co/bitcoin-solutions</downloadUrl>
   </distributionManagement>
+  -->
 
   <scm>
     <connection>scm:git:git@github.com:keepkey/multibit-hardware.git</connection>
@@ -126,7 +128,7 @@
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-gpg-plugin</artifactId>
-            <version>1.4</version>
+            <version>1.6</version>
             <executions>
               <execution>
                 <id>sign-artifacts</id>
@@ -134,11 +136,39 @@
                 <goals>
                   <goal>sign</goal>
                 </goals>
+                <configuration>
+                  <homedir>${gpg.homedir}</homedir>
+                  <defaultKeyring>false</defaultKeyring>
+                </configuration>
               </execution>
             </executions>
           </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-deploy-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <configuration>
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-install-plugin</artifactId>
+            <configuration>
+              <createChecksum>true</createChecksum>
+            </configuration>
+          </plugin>
         </plugins>
       </build>
+      <properties>
+        <gpg.homedir>/Volumes/GPG/.gnupg</gpg.homedir>
+      </properties>
     </profile>
 
   </profiles>
