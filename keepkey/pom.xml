@@ -1,11 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
     <groupId>org.multibit.hd.hardware</groupId>
     <artifactId>parent</artifactId>
-    <version>develop-SNAPSHOT</version>
+    <version>0.8.0</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -64,14 +62,14 @@
                     <path id="proto.path">
                       <!-- Include KeepKey Common files -->
                       <fileset dir="src/main/keepkey-common/protob">
-                        <include name="**/*.proto"/>
+                        <include name="**/*.proto" />
                       </fileset>
                     </path>
-                    <pathconvert pathsep=" " property="proto.files" refid="proto.path"/>
+                    <pathconvert pathsep=" " property="proto.files" refid="proto.path" />
                     <exec executable="/usr/local/bin/protoc" failonerror="true">
-                      <arg value="-I=${project.basedir}/src/main/keepkey-common/protob"/>
-                      <arg value="--java_out=${project.basedir}/src/main/java"/>
-                      <arg line="${proto.files}"/>
+                      <arg value="-I=${project.basedir}/src/main/keepkey-common/protob" />
+                      <arg value="--java_out=${project.basedir}/src/main/java" />
+                      <arg line="${proto.files}" />
                     </exec>
                   </tasks>
                 </configuration>
@@ -94,7 +92,7 @@
     <dependency>
       <groupId>org.multibit.hd.hardware</groupId>
       <artifactId>core</artifactId>
-      <version>develop-SNAPSHOT</version>
+      <version>0.8.0</version>
     </dependency>
 
     <!-- hid4java for HID USB -->
