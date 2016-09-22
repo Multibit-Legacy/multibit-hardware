@@ -3,7 +3,7 @@
   <parent>
     <groupId>org.multibit.hd.hardware</groupId>
     <artifactId>parent</artifactId>
-    <version>develop-SNAPSHOT</version>
+    <version>0.8.1</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
@@ -90,7 +90,7 @@
     <dependency>
       <groupId>org.multibit.hd.hardware</groupId>
       <artifactId>core</artifactId>
-      <version>develop-SNAPSHOT</version>
+      <version>0.8.1</version>
     </dependency>
 
     <!-- hid4java for HID USB -->
