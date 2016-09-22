@@ -69,11 +69,13 @@ public abstract class AbstractTrezorHardwareWallet extends AbstractHardwareWalle
 
       byte[] buffer;
       if (hid_version == 2) {
+          /* Trezor Firmware 1.3.6 and later */
           buffer = new byte[PACKET_LENGTH_HID2];
           buffer[0] = 0;
           buffer[1] = 63; // Length
           messageBuffer.get(buffer, 2, 63); // Payload
       } else {
+          /* Trezor Firmware upto 1.3.5 */
           buffer = new byte[PACKET_LENGTH_HID1];
           buffer[0] = 63; // Length
           messageBuffer.get(buffer, 1, 63); // Payload
