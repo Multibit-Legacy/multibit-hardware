@@ -276,8 +276,8 @@
       <!-- hid4java for HID USB -->
       <dependency>
         <groupId>org.hid4java</groupId>
-        <artifactId>hid4java</artifactId>
-        <version>0.4.0</version>
+        <artifactId>hid4java-bob</artifactId>
+        <version>0.4.0-bob-0.1.0</version>
       </dependency>
 
       <!-- Findbugs annotations -->

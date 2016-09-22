@@ -98,7 +98,7 @@
     <!-- hid4java for HID USB -->
     <dependency>
       <groupId>org.hid4java</groupId>
-      <artifactId>hid4java</artifactId>
+      <artifactId>hid4java-bob</artifactId>
     </dependency>
 
   </dependencies>
